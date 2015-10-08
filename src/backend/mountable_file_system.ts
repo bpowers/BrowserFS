@@ -1,8 +1,8 @@
 import file_system = require('../core/file_system');
 import in_memory = require('./in_memory');
 import api_error = require('../core/api_error');
-import fs = require('../core/node_fs');
 import browserfs = require('../core/browserfs');
+import { fs } from '../core/node_fs';
 
 var ApiError = api_error.ApiError;
 var ErrorCode = api_error.ErrorCode;

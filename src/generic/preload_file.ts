@@ -4,7 +4,7 @@ import node_fs_stats = require('../core/node_fs_stats');
 import buffer = require('../core/buffer');
 import file_flag = require('../core/file_flag');
 import api_error = require('../core/api_error');
-import fs = require('../core/node_fs');
+import { fs } from '../core/node_fs';
 
 var ApiError = api_error.ApiError;
 var ErrorCode = api_error.ErrorCode;

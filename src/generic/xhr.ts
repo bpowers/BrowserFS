@@ -23,7 +23,7 @@ function getIEByteArray(IEByteArray: any): number[] {
     var v = match.charCodeAt(0)
     return String.fromCharCode(v&0xff, v>>8)
   }) + lastChr;
-  var data_array = new Array(data_str.length);
+  var data_array: any = new Array(data_str.length);
   for (var i = 0; i < data_str.length; i++) {
     data_array[i] = data_str.charCodeAt(i);
   }
@@ -44,7 +44,7 @@ function downloadFileIE(async: boolean, p: string, type: string, cb: (err: api_e
   req.open('GET', p, async);
   req.setRequestHeader("Accept-Charset", "x-user-defined");
   req.onreadystatechange = function(e) {
-    var data_array;
+    var data_array: any;
     if (req.readyState === 4) {
       if (req.status === 200) {
         switch(type) {
@@ -73,7 +73,7 @@ function syncDownloadFileIE(p: string, type: 'buffer'): NodeBuffer;
 function syncDownloadFileIE(p: string, type: 'json'): any;
 function syncDownloadFileIE(p: string, type: string): any;
 function syncDownloadFileIE(p: string, type: string): any {
-  var rv;
+  var rv: any;
   downloadFileIE(false, p, type, function(err: api_error.ApiError, data?: any) {
     if (err) throw err;
     rv = data;
@@ -137,8 +137,8 @@ function syncDownloadFileModern(p: string, type: string): any {
 
   // On most platforms, we cannot set the responseType of synchronous downloads.
   // @todo Test for this; IE10 allows this, as do older versions of Chrome/FF.
-  var data = null;
-  var err = null;
+  var data: any = null;
+  var err: any = null;
   // Classic hack to download binary data as a string.
   req.overrideMimeType('text/plain; charset=x-user-defined');
   req.onreadystatechange = function(e) {
@@ -193,8 +193,8 @@ function syncDownloadFileIE10(p: string, type: string): any {
     default:
       throw new ApiError(ErrorCode.EINVAL, "Invalid download type: " + type);
   }
-  var data;
-  var err;
+  var data: any;
+  var err: any;
   req.onreadystatechange = function(e) {
     if (req.readyState === 4) {
       if (req.status === 200) {

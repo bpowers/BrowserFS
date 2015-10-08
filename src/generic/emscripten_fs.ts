@@ -10,10 +10,10 @@
  * https://raw.github.com/kripken/emscripten/master/src/library_nodefs.js
  */
 import BrowserFS = require('../core/browserfs');
-import fs = require('../core/node_fs');
 import buffer = require('../core/buffer');
 import buffer_core_arraybuffer = require('../core/buffer_core_arraybuffer');
 import node_fs_stats = require('../core/node_fs_stats');
+import { fs } from '../core/node_fs';
 
 import Buffer = buffer.Buffer;
 import BufferCoreArrayBuffer = buffer_core_arraybuffer.BufferCoreArrayBuffer;

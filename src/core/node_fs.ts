@@ -138,7 +138,7 @@ function nopCb() {};
  * @see http://nodejs.org/api/fs.html
  * @class
  */
-class fs {
+export class fs {
   private static root: file_system.FileSystem = null;
 
   public static _initialize(rootFS: file_system.FileSystem): file_system.FileSystem {
@@ -1416,5 +1416,3 @@ class fs {
     return fs.root.realpathSync(path, cache);
   }
 }
-
-export = fs;
