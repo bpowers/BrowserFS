@@ -7,6 +7,7 @@ import file = require('../core/file');
 import node_fs_stats = require('../core/node_fs_stats');
 import preload_file = require('../generic/preload_file');
 import browserfs = require('../core/browserfs');
+import path = require('../core/node_path');
 import ApiError = api_error.ApiError;
 import ErrorCode = api_error.ErrorCode;
 
@@ -100,7 +101,7 @@ class AsyncMirrorFS extends file_system.SynchronousFileSystem implements file_sy
               if (err) {
                 cb(err);
               } else if (i < files.length) {
-                copyItem(`${p}/${files[i]}`, copyNextFile);
+                copyItem(path.join(p, files[i]), copyNextFile);
                 i++;
               } else {
                 cb();
@@ -109,7 +110,8 @@ class AsyncMirrorFS extends file_system.SynchronousFileSystem implements file_sy
             copyNextFile();
           }
         });
-      }, copyFile = (p: string, mode: number, cb: (err?: ApiError) => void) => {
+      };
+      var copyFile = (p: string, mode: number, cb: (err?: ApiError) => void) => {
         this._async.readFile(p, null, file_flag.FileFlag.getFileFlag('r'), (err, data) => {
           if (err) {
             cb(err);
@@ -123,7 +125,8 @@ class AsyncMirrorFS extends file_system.SynchronousFileSystem implements file_sy
             }
           }
         });
-      }, copyItem = (p: string, cb: (err?: ApiError) => void) => {
+      };
+      var copyItem = (p: string, cb: (err?: ApiError) => void) => {
         this._async.stat(p, false, (err, stats) => {
           if (err) {
             cb(err);
