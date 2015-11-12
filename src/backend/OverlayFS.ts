@@ -4,7 +4,8 @@ import {FileFlag, ActionType} from '../core/file_flag';
 import util = require('../core/util');
 import file = require('../core/file');
 import {default as Stats, FileType} from '../core/node_fs_stats';
-import preload_file = require('../generic/preload_file');
+import {PreloadFile} from '../generic/preload_file';
+import {LockedFS} from '../generic/locked_fs';
 import path = require('path');
 import browserfs = require('../core/browserfs');
 
@@ -24,8 +25,8 @@ function getFlag(f: string): FileFlag {
 /**
  * Overlays a RO file to make it writable.
  */
-class OverlayFile extends preload_file.PreloadFile<OverlayFS> implements file.File {
-  constructor(fs: OverlayFS, path: string, flag: FileFlag, stats: Stats, data: Buffer) {
+class OverlayFile extends PreloadFile<InternalOverlayFS> implements file.File {
+  constructor(fs: InternalOverlayFS, path: string, flag: FileFlag, stats: Stats, data: Buffer) {
     super(fs, path, flag, stats, data);
   }
 
@@ -62,7 +63,7 @@ class OverlayFile extends preload_file.PreloadFile<OverlayFS> implements file.Fi
  * writable file system. Deletes are persisted via metadata stored on the writable
  * file system.
  */
-export default class OverlayFS extends file_system.SynchronousFileSystem implements file_system.FileSystem {
+export class InternalOverlayFS extends file_system.SynchronousFileSystem implements file_system.FileSystem {
   private _writable: file_system.FileSystem;
   private _readable: file_system.FileSystem;
   private _isInitialized: boolean = false;
@@ -140,13 +141,13 @@ export default class OverlayFS extends file_system.SynchronousFileSystem impleme
     return true;
   }
 
-  public _syncAsync(file: preload_file.PreloadFile<OverlayFS>, cb: (err: ApiError)=>void): void {
+  public _syncAsync(file: PreloadFile<InternalOverlayFS>, cb: (err: ApiError)=>void): void {
     this.createParentDirectoriesAsync(file.getPath(), () => {
       this._writable.writeFile(file.getPath(), file.getBuffer(), null, getFlag('w'), file.getStats().mode, cb);
     });
   }
 
-  public _syncSync(file: preload_file.PreloadFile<OverlayFS>): void {
+  public _syncSync(file: PreloadFile<InternalOverlayFS>): void {
     this.createParentDirectories(file.getPath());
     this._writable.writeFileSync(file.getPath(), file.getBuffer(), null, getFlag('w'), file.getStats().mode);
   }
@@ -418,3 +419,5 @@ export default class OverlayFS extends file_system.SynchronousFileSystem impleme
     }
   }
 }
+
+export type OverlayFS = LockedFS<InternalOverlayFS>;

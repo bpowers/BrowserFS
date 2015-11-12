@@ -1,4 +1,4 @@
-import OverlayFS from '../../../src/backend/OverlayFS';
+import {OverlayFS} from '../../../src/backend/OverlayFS';
 import BackendFactory = require('../BackendFactory');
 import file_system = require('../../../src/core/file_system');
 import InMemoryFileSystem from '../../../src/backend/InMemory';
