@@ -320,10 +320,10 @@ function isAPIResponse(data: any): data is IAPIResponse {
 /**
  * Represents a remote file in a different worker/thread.
  */
-class WorkerFile extends preload_file.PreloadFile<WorkerFS> {
+class WorkerFile extends preload_file.PreloadFile<WorkerFileSystem> {
   private _remoteFdId: number;
 
-  constructor(_fs: WorkerFS, _path: string, _flag: file_flag.FileFlag, _stat: Stats, remoteFdId: number, contents?: NodeBuffer) {
+  constructor(_fs: WorkerFileSystem, _path: string, _flag: file_flag.FileFlag, _stat: Stats, remoteFdId: number, contents?: NodeBuffer) {
     super(_fs, _path, _flag, _stat, contents);
     this._remoteFdId = remoteFdId;
   }
@@ -345,7 +345,7 @@ class WorkerFile extends preload_file.PreloadFile<WorkerFS> {
 
   private _syncClose(type: string, cb: (e?: ApiError) => void): void {
     if (this.isDirty()) {
-      (<WorkerFS> this._fs).syncClose(type, this, (e?: ApiError) => {
+      (<WorkerFileSystem> this._fs).syncClose(type, this, (e?: ApiError) => {
         if (!e) {
           this.resetDirty();
         }
@@ -366,7 +366,7 @@ class WorkerFile extends preload_file.PreloadFile<WorkerFS> {
 }
 
 /**
- * WorkerFS lets you access a BrowserFS instance that is running in a different
+ * WorkerFileSystem lets you access a BrowserFS instance that is running in a different
  * JavaScript context (e.g. access BrowserFS in one of your WebWorkers, or
  * access BrowserFS running on the main page from a WebWorker).
  *
@@ -376,19 +376,19 @@ class WorkerFile extends preload_file.PreloadFile<WorkerFS> {
  * MAIN BROWSER THREAD:
  * ```
  *   // Listen for remote file system requests.
- *   BrowserFS.FileSystem.WorkerFS.attachRemoteListener(webWorkerObject);
+ *   BrowserFS.FileSystem.WorkerFileSystem.attachRemoteListener(webWorkerObject);
  * ``
  *
  * WEBWORKER THREAD:
  * ```
  *   // Set the remote file system as the root file system.
- *   BrowserFS.initialize(new BrowserFS.FileSystem.WorkerFS(self));
+ *   BrowserFS.initialize(new BrowserFS.FileSystem.WorkerFileSystem(self));
  * ```
  *
- * Note that synchronous operations are not permitted on the WorkerFS, regardless
+ * Note that synchronous operations are not permitted on the WorkerFileSystem, regardless
  * of the configuration option of the remote FS.
  */
-export default class WorkerFS extends file_system.BaseFileSystem implements file_system.FileSystem {
+export class WorkerFileSystem extends file_system.BaseFileSystem implements file_system.FileSystem {
   private _worker: Worker;
   private _callbackConverter = new CallbackArgumentConverter();
 
@@ -403,7 +403,7 @@ export default class WorkerFS extends file_system.BaseFileSystem implements file
   private _outstandingRequests: { [id: number]: () => void } = {};
 
   /**
-   * Constructs a new WorkerFS instance that connects with BrowserFS running on
+   * Constructs a new WorkerFileSystem instance that connects with BrowserFS running on
    * the specified worker.
    */
   constructor(worker: Worker) {
@@ -427,7 +427,7 @@ export default class WorkerFS extends file_system.BaseFileSystem implements file
   }
 
   public getName(): string {
-    return 'WorkerFS';
+    return 'WorkerFileSystem';
   }
 
   private _argRemote2Local(arg: any): any {

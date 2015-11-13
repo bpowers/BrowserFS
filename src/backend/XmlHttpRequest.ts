@@ -11,7 +11,7 @@ import {FileIndex, DirInode, FileInode, Inode, isFileInode, isDirInode} from '..
 /**
  * A simple filesystem backed by XmlHttpRequests.
  */
-export default class XmlHttpRequest extends file_system.BaseFileSystem implements file_system.FileSystem {
+export class XmlHttpRequestFileSystem extends file_system.BaseFileSystem implements file_system.FileSystem {
   private _index: FileIndex;
   public prefixUrl: string;
   /**
@@ -82,7 +82,7 @@ export default class XmlHttpRequest extends file_system.BaseFileSystem implement
   }
 
   public getName(): string {
-    return 'XmlHttpRequest';
+    return 'XmlHttpRequestFileSystem';
   }
 
   public static isAvailable(): boolean {
@@ -296,7 +296,7 @@ export default class XmlHttpRequest extends file_system.BaseFileSystem implement
           return oldCb(err, arg);
         });
       };
-      var fdCast = <preload_file.NoSyncFile<XmlHttpRequest>> fd;
+      var fdCast = <preload_file.NoSyncFile<XmlHttpRequestFileSystem>> fd;
       var fdBuff = <Buffer> fdCast.getBuffer();
       if (encoding === null) {
         return cb(err, copyingSlice(fdBuff));
@@ -316,7 +316,7 @@ export default class XmlHttpRequest extends file_system.BaseFileSystem implement
     // Get file.
     var fd = this.openSync(fname, flag, 0x1a4);
     try {
-      var fdCast = <preload_file.NoSyncFile<XmlHttpRequest>> fd;
+      var fdCast = <preload_file.NoSyncFile<XmlHttpRequestFileSystem>> fd;
       var fdBuff = <Buffer> fdCast.getBuffer();
       if (encoding === null) {
         return copyingSlice(fdBuff);

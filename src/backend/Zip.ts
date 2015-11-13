@@ -464,10 +464,10 @@ export class EndOfCentralDirectory {
   }
 }
 
-export default class ZipFS extends file_system.SynchronousFileSystem implements file_system.FileSystem {
+export class ZipFileSystem extends file_system.SynchronousFileSystem implements file_system.FileSystem {
   private _index: FileIndex = new FileIndex();
   /**
-   * Constructs a ZipFS from the given zip file data. Name is optional, and is
+   * Constructs a ZipFileSystem from the given zip file data. Name is optional, and is
    * used primarily for our unit tests' purposes to differentiate different
    * test zip files in test output.
    */
@@ -477,7 +477,7 @@ export default class ZipFS extends file_system.SynchronousFileSystem implements 
   }
 
   public getName(): string {
-    return 'ZipFS' + (this.name !== '' ? ' ' + this.name : '');
+    return 'ZipFileSystem' + (this.name !== '' ? ' ' + this.name : '');
   }
 
   public static isAvailable(): boolean { return true; }
@@ -565,7 +565,7 @@ export default class ZipFS extends file_system.SynchronousFileSystem implements 
     // Get file.
     var fd = this.openSync(fname, flag, 0x1a4);
     try {
-      var fdCast = <preload_file.NoSyncFile<ZipFS>> fd;
+      var fdCast = <preload_file.NoSyncFile<ZipFileSystem>> fd;
       var fdBuff = <Buffer> fdCast.getBuffer();
       if (encoding === null) {
         return copyingSlice(fdBuff);
@@ -603,11 +603,11 @@ export default class ZipFS extends file_system.SynchronousFileSystem implements 
   private populateIndex() {
     var eocd: EndOfCentralDirectory = this.getEOCD();
     if (eocd.diskNumber() !== eocd.cdDiskNumber())
-      throw new ApiError(ErrorCode.EINVAL, "ZipFS does not support spanned zip files.");
+      throw new ApiError(ErrorCode.EINVAL, "ZipFileSystem does not support spanned zip files.");
 
     var cdPtr = eocd.cdOffset();
     if (cdPtr === 0xFFFFFFFF)
-      throw new ApiError(ErrorCode.EINVAL, "ZipFS does not support Zip64.");
+      throw new ApiError(ErrorCode.EINVAL, "ZipFileSystem does not support Zip64.");
     var cdEnd = cdPtr + eocd.cdSize();
     while (cdPtr < cdEnd) {
       var cd: CentralDirectory = new CentralDirectory(this.data, this.data.slice(cdPtr));

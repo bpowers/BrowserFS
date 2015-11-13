@@ -1,12 +1,12 @@
 import XHRFSFactory = require('./xhrfs_factory');
 import file_system = require('../../../src/core/file_system');
-import ZipFS from '../../../src/backend/ZipFS';
+import {ZipFileSystem} from '../../../src/backend/Zip';
 import BackendFactory = require('../BackendFactory');
 import BrowserFS = require('../../../src/core/browserfs');
 import _fs = require('../../../src/core/node_fs');
 
 function ZipFSFactory(cb: (name: string, objs: file_system.FileSystem[]) => void): void {
-  if (ZipFS.isAvailable()) {
+  if (ZipFileSystem.isAvailable()) {
     XHRFSFactory((_, xhrfs) => {
       if (xhrfs.length === 0) {
         return cb('ZipFS', xhrfs);
@@ -21,7 +21,7 @@ function ZipFSFactory(cb: (name: string, objs: file_system.FileSystem[]) => void
         ((zipFilename: string) => {
           fs.readFile(zipFilename, (e, data?) => {
             if (e) throw e;
-            if (rv.push(new ZipFS(data, zipFilename)) === zipFiles.length) {
+            if (rv.push(new ZipFileSystem(data, zipFilename)) === zipFiles.length) {
               cb('zipfs', rv);
             }
           });

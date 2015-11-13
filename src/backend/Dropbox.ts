@@ -311,7 +311,7 @@ export class DropboxFile extends preload_file.PreloadFile<DropboxFileSystem> imp
   }
 }
 
-export default class DropboxFileSystem extends file_system.BaseFileSystem implements file_system.FileSystem {
+export class DropboxFileSystem extends file_system.BaseFileSystem implements file_system.FileSystem {
   // The Dropbox client.
   private _client: CachedDropboxClient;
 
@@ -325,7 +325,7 @@ export default class DropboxFileSystem extends file_system.BaseFileSystem implem
   }
 
   public getName(): string {
-    return 'Dropbox';
+    return 'DropboxFileSystem';
   }
 
   public static isAvailable(): boolean {

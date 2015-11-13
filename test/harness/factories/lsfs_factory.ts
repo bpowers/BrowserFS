@@ -1,4 +1,4 @@
-import LocalStorageFileSystem from '../../../src/backend/LocalStorage';
+import {LocalStorageFileSystem} from '../../../src/backend/LocalStorage';
 import file_system = require('../../../src/core/file_system');
 import BackendFactory = require('../BackendFactory');
 

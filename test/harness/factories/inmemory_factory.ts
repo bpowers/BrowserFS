@@ -1,4 +1,4 @@
-import InMemoryFileSystem from '../../../src/backend/InMemory';
+import {InMemoryFileSystem} from '../../../src/backend/InMemory';
 import file_system = require('../../../src/core/file_system');
 import BackendFactory = require('../BackendFactory');
 

@@ -16,11 +16,12 @@ function isDirectoryEntry(entry: Entry): entry is DirectoryEntry {
 var _getFS: (type:number, size:number, successCallback: FileSystemCallback, errorCallback?: ErrorCallback) => void = global.webkitRequestFileSystem || global.requestFileSystem || null;
 
 function _requestQuota(type: number, size: number, success: (size: number) => void, errorCallback: ErrorCallback) {
-  // We cast navigator and window to '<any>' because everything here is
-  // nonstandard functionality, despite the fact that Chrome has the only
-  // implementation of the HTML5FS and is likely driving the standardization
-  // process. Thus, these objects defined off of navigator and window are not
-  // present in the DefinitelyTyped TypeScript typings for FileSystem.
+  // We cast navigator and window to '<any>' because everything here
+  // is nonstandard functionality, despite the fact that Chrome has
+  // the only implementation of the HTML5FileSystem and is likely
+  // driving the standardization process. Thus, these objects defined
+  // off of navigator and window are not present in the
+  // DefinitelyTyped TypeScript typings for FileSystem.
   if (typeof (<any> navigator)['webkitPersistentStorage'] !== 'undefined') {
     switch(type) {
       case global.PERSISTENT:
@@ -50,8 +51,8 @@ function _toArray(list?: any[]): any[] {
 //   - exclusive: If true, only create the entry if it doesn't already exist,
 //                and throw an error if it does.
 
-export class HTML5FSFile extends preload_file.PreloadFile<HTML5FS> implements file.File {
-  constructor(_fs: HTML5FS, _path: string, _flag: FileFlag, _stat: Stats, contents?: NodeBuffer) {
+export class HTML5FSFile extends preload_file.PreloadFile<HTML5FileSystem> implements file.File {
+  constructor(_fs: HTML5FileSystem, _path: string, _flag: FileFlag, _stat: Stats, contents?: NodeBuffer) {
     super(_fs, _path, _flag, _stat, contents);
   }
 
@@ -93,10 +94,10 @@ export class HTML5FSFile extends preload_file.PreloadFile<HTML5FS> implements fi
   }
 }
 
-export default class HTML5FS extends file_system.BaseFileSystem implements file_system.FileSystem {
+export class HTML5FileSystem extends file_system.BaseFileSystem implements file_system.FileSystem {
   private size: number;
   private type: number;
-  // HTML5File reaches into HTML5FS. :/
+  // HTML5File reaches into HTML5FileSystem. :/
   public fs: FileSystem;
   /**
    * Arguments:
@@ -111,7 +112,7 @@ export default class HTML5FS extends file_system.BaseFileSystem implements file_
   }
 
   public getName(): string {
-    return 'HTML5 FileSystem';
+    return 'HTML5FileSystem';
   }
 
   public static isAvailable(): boolean {

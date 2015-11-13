@@ -13,8 +13,8 @@ interface IAsyncOperation {
 /**
  * We define our own file to interpose on syncSync() for mirroring purposes.
  */
-class MirrorFile extends preload_file.PreloadFile<AsyncMirror> implements file.File {
-  constructor(fs: AsyncMirror, path: string, flag: file_flag.FileFlag, stat: Stats, data: Buffer) {
+class MirrorFile extends preload_file.PreloadFile<AsyncMirrorFileSystem> implements file.File {
+  constructor(fs: AsyncMirrorFileSystem, path: string, flag: file_flag.FileFlag, stat: Stats, data: Buffer) {
     super(fs, path, flag, stat, data);
   }
 
@@ -31,7 +31,7 @@ class MirrorFile extends preload_file.PreloadFile<AsyncMirror> implements file.F
 }
 
 /**
- * AsyncMirrorFS mirrors a synchronous filesystem into an asynchronous filesystem
+ * AsyncMirrorFileSystem mirrors a synchronous filesystem into an asynchronous filesystem
  * by:
  * * Performing operations over the in-memory copy, while asynchronously pipelining them
  *   to the backing store.
@@ -40,7 +40,7 @@ class MirrorFile extends preload_file.PreloadFile<AsyncMirror> implements file.F
  * The two stores will be kept in sync. The most common use-case is to pair a synchronous
  * in-memory filesystem with an asynchronous backing store.
  */
-export default class AsyncMirror extends file_system.SynchronousFileSystem implements file_system.FileSystem {
+export class AsyncMirrorFileSystem extends file_system.SynchronousFileSystem implements file_system.FileSystem {
   /**
    * Queue of pending asynchronous operations.
    */
@@ -62,7 +62,7 @@ export default class AsyncMirror extends file_system.SynchronousFileSystem imple
   }
 
   public getName(): string {
-	 	return "AsyncMirror";
+	 	return "AsyncMirrorFileSystem";
   }
 
   public static isAvailable(): boolean {
