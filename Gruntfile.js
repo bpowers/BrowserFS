@@ -406,9 +406,9 @@ module.exports = function(grunt) {
     var backends = getBackends(),
       main = [];
     backends.forEach(function(backendName) {
-      main.push("import {" + backendName + "FileSystem} from '../backend/" + backendName + "';");
+      main.push("import " + backendName + " from '../backend/" + backendName + "';");
     });
-    main.push("export {" + backends.join("FileSystem, ") + "FileSystem};\n");
+    main.push("export {" + backends.join(", ") + "};\n");
     fs.writeFileSync('src/core/backends.ts', main.join('\n'));
   });
 

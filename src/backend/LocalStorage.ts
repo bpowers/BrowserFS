@@ -79,13 +79,9 @@ export class LocalStorageStore implements kvfs.SyncKeyValueStore, kvfs.SimpleSyn
  * A synchronous file system backed by localStorage. Connects our
  * LocalStorageStore to our SyncKeyValueFileSystem.
  */
-export class LocalStorageFileSystem extends kvfs.SyncKeyValueFileSystem {
+export default class LocalStorageFileSystem extends kvfs.SyncKeyValueFileSystem {
   constructor() { super({ store: new LocalStorageStore() }); }
   public static isAvailable(): boolean {
     return typeof global.localStorage !== 'undefined';
-  }
-
-  getName(): string {
-    return 'LocalStorageFileSystem';
   }
 }

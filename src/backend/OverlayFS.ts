@@ -25,8 +25,8 @@ function getFlag(f: string): FileFlag {
 /**
  * Overlays a RO file to make it writable.
  */
-class OverlayFile extends PreloadFile<UnlockedOverlayFileSystem> implements file.File {
-  constructor(fs: UnlockedOverlayFileSystem, path: string, flag: FileFlag, stats: Stats, data: Buffer) {
+class OverlayFile extends PreloadFile<InternalOverlayFS> implements file.File {
+  constructor(fs: InternalOverlayFS, path: string, flag: FileFlag, stats: Stats, data: Buffer) {
     super(fs, path, flag, stats, data);
   }
 
@@ -63,7 +63,7 @@ class OverlayFile extends PreloadFile<UnlockedOverlayFileSystem> implements file
  * writable file system. Deletes are persisted via metadata stored on the writable
  * file system.
  */
-export class UnlockedOverlayFileSystem extends file_system.SynchronousFileSystem implements file_system.FileSystem {
+export class InternalOverlayFS extends file_system.SynchronousFileSystem implements file_system.FileSystem {
   private _writable: file_system.FileSystem;
   private _readable: file_system.FileSystem;
   private _isInitialized: boolean = false;
@@ -141,19 +141,19 @@ export class UnlockedOverlayFileSystem extends file_system.SynchronousFileSystem
     return true;
   }
 
-  public _syncAsync(file: PreloadFile<UnlockedOverlayFileSystem>, cb: (err: ApiError)=>void): void {
+  public _syncAsync(file: PreloadFile<InternalOverlayFS>, cb: (err: ApiError)=>void): void {
     this.createParentDirectoriesAsync(file.getPath(), () => {
       this._writable.writeFile(file.getPath(), file.getBuffer(), null, getFlag('w'), file.getStats().mode, cb);
     });
   }
 
-  public _syncSync(file: PreloadFile<UnlockedOverlayFileSystem>): void {
+  public _syncSync(file: PreloadFile<InternalOverlayFS>): void {
     this.createParentDirectories(file.getPath());
     this._writable.writeFileSync(file.getPath(), file.getBuffer(), null, getFlag('w'), file.getStats().mode);
   }
 
   public getName() {
-    return "UnlockedOverlayFileSystem";
+    return "OverlayFS";
   }
 
   /**
@@ -420,4 +420,4 @@ export class UnlockedOverlayFileSystem extends file_system.SynchronousFileSystem
   }
 }
 
-export type OverlayFileSystem = LockedFS<UnlockedOverlayFileSystem>;
+export type OverlayFS = LockedFS<InternalOverlayFS>;

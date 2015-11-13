@@ -1,4 +1,4 @@
-import {IndexedDBFileSystem} from '../../../src/backend/IndexedDB';
+import IndexedDBFileSystem from '../../../src/backend/IndexedDB';
 import BackendFactory = require('../BackendFactory');
 import file_system = require('../../../src/core/file_system');
 

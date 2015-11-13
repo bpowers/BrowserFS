@@ -33,7 +33,7 @@ export class InMemoryStore implements kvfs.SyncKeyValueStore, kvfs.SimpleSyncSto
 /**
  * A simple in-memory file system backed by an InMemoryStore.
  */
-export class InMemoryFileSystem extends kvfs.SyncKeyValueFileSystem {
+export default class InMemoryFileSystem extends kvfs.SyncKeyValueFileSystem {
   constructor() {
     super({ store: new InMemoryStore() });
   }

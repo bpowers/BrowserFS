@@ -1,5 +1,5 @@
 import file_system = require('../core/file_system');
-import {InMemoryFileSystem} from './InMemory';
+import InMemoryFileSystem from './InMemory';
 import {ApiError, ErrorCode} from '../core/api_error';
 import fs = require('../core/node_fs');
 import path = require('path');
@@ -14,7 +14,7 @@ import {mkdirpSync} from '../core/util';
  * For example, if a file system is mounted at /mnt/blah, and a request came in
  * for /mnt/blah/foo.txt, the file system would see a request for /foo.txt.
  */
-export class MountableFileSystem extends file_system.BaseFileSystem implements file_system.FileSystem {
+export default class MountableFileSystem extends file_system.BaseFileSystem implements file_system.FileSystem {
   private mntMap: {[path: string]: file_system.FileSystem};
   private rootFs: file_system.FileSystem;
   constructor() {

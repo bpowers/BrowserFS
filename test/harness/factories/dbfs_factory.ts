@@ -1,4 +1,4 @@
-import {DropboxFileSystem} from '../../../src/backend/Dropbox';
+import DropboxFileSystem from '../../../src/backend/Dropbox';
 import BackendFactory = require('../BackendFactory');
 import file_system = require('../../../src/core/file_system');
 
