@@ -420,4 +420,12 @@ export class InternalOverlayFS extends file_system.SynchronousFileSystem impleme
   }
 }
 
-export type OverlayFS = LockedFS<InternalOverlayFS>;
+export default class OverlayFS extends LockedFS<InternalOverlayFS> {
+	constructor(writable: file_system.FileSystem, readable: file_system.FileSystem) {
+		super(InternalOverlayFS, writable, readable);
+	}
+
+	initialize(cb: (err?: ApiError) => void): void {
+		super.initialize(cb);
+	}
+}
