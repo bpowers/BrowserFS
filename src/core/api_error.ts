@@ -51,11 +51,9 @@ ErrorStrings[ErrorCode.ENOTSUP] = 'Operation is not supported.';
  */
 export class ApiError extends Error implements NodeJS.ErrnoException {
   public errno: ErrorCode;
-  public code: string;
   public path: string;
   // Unsupported.
-  public syscall: string = "";
-  public stack: string;
+  //public syscall: string = "";
 
   /**
    * Represents a BrowserFS error. Passed back to applications after a failed
@@ -67,13 +65,22 @@ export class ApiError extends Error implements NodeJS.ErrnoException {
    * @param type The type of the error.
    * @param [message] A descriptive error message.
    */
-  constructor(type: ErrorCode, message: string = ErrorStrings[type], path: string = null) {
+  constructor(type: ErrorCode, message: string = '', path: string = null) {
     super(message);
     this.errno = type;
-    this.code = ErrorCode[type];
     this.path = path;
-    this.stack = (<any>new Error()).stack;
-    this.message = `Error: ${this.code}: ${message}${this.path ? `, '${this.path}'` : ''}`;
+  }
+
+  get code(): string {
+    return ErrorCode[this.errno];
+  }
+
+  get stack(): string {
+    return undefined;
+  }
+
+  get message(): string {
+    return `Error: ${this.code}: ${ErrorStrings[this.errno]}${this.path ? `, '${this.path}'` : ''}`;
   }
 
   /**
