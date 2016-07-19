@@ -29,7 +29,7 @@ module.exports = function() {
   var rootFS = fs.getRootFS();
 
   function check(async, sync) {
-    var expected = /Path must be a string without null bytes./;
+    var expected = /EINVAL/ // /Path must be a string without null bytes./;
     var argsSync = Array.prototype.slice.call(arguments, 2);
     var argsAsync = argsSync.concat(function(er) {
       assert(er && er.message.match(expected));
