@@ -161,12 +161,18 @@ export default class XmlHttpRequest extends file_system.BaseFileSystem implement
       stats = inode.getData();
       // At this point, a non-opened file will still have default stats from the listing.
       if (stats.size < 0) {
-        this._requestFileSizeAsync(path, function(e: ApiError, size?: number) {
-          if (e) {
-            return cb(e);
+        // @todo We may get a readystatechanged event for
+        // HEADERS_RECEIVED, which would allow us to return stats even
+        // if the rest of the content wasn't available.  That would
+        // require reworking the _requestFile* API.
+        this._requestFileAsync(path, 'buffer', function(err: ApiError, buffer?: NodeBuffer) {
+          if (err) {
+            return cb(err);
           }
-          stats.size = size;
-          cb(null, stats.clone());
+          // we don't initially have file sizes
+          stats.size = buffer.length;
+          stats.file_data = buffer;
+          return cb(null, stats.clone());
         });
       } else {
         cb(null, stats.clone());
