@@ -251,7 +251,8 @@ export default class XmlHttpRequest extends file_system.BaseFileSystem implement
           return cb(new ApiError(ErrorCode.EINVAL, 'Invalid FileMode object.'));
       }
     } else {
-      return cb(ApiError.EISDIR(path));
+      staticEisdir.path = path
+      return cb(staticEisdir);
     }
   }
 
