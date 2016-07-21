@@ -9,6 +9,7 @@ import preload_file = require('../generic/preload_file');
 var ROOT_NODE_ID: string = "/";
 
 let staticEnoent = ApiError.ENOENT('');
+let staticEnotdir = ApiError.ENOTDIR('');
 
 /**
  * Generates a random ID.
@@ -339,7 +340,7 @@ export class SyncKeyValueFileSystem extends file_system.SynchronousFileSystem {
    */
   private getDirListing(tx: SyncKeyValueROTransaction, p: string, inode: Inode): { [fileName: string]: string } {
     if (!inode.isDirectory()) {
-      throw ApiError.ENOTDIR(p);
+      return undefined;
     }
     var data = tx.get(inode.id);
     if (data === undefined) {
@@ -385,6 +386,9 @@ export class SyncKeyValueFileSystem extends file_system.SynchronousFileSystem {
       throw ApiError.ENOENT(parentDir);
     }
     var dirListing = this.getDirListing(tx, parentDir, parentNode);
+    if (!dirListing) {
+      throw ApiError.ENOTDIR(parentDir);
+    }
     var currTime = (new Date()).getTime();
 
     // Invariant: The root always exists.
@@ -435,6 +439,9 @@ export class SyncKeyValueFileSystem extends file_system.SynchronousFileSystem {
       throw ApiError.ENOENT(oldParent);
     }
     var oldDirList = this.getDirListing(tx, oldParent, oldDirNode);
+    if (!oldDirList) {
+      throw ApiError.ENOTDIR(oldParent);
+    }
 
     if (!oldDirList[oldName]) {
       throw ApiError.ENOENT(oldPath);
@@ -463,6 +470,9 @@ export class SyncKeyValueFileSystem extends file_system.SynchronousFileSystem {
         throw ApiError.ENOENT(newParent);
       }
       newDirList = this.getDirListing(tx, newParent, newDirNode);
+      if (!newDirList) {
+        throw ApiError.ENOTDIR(newParent);
+      }
     }
 
     if (newDirList[newName]) {
@@ -552,6 +562,9 @@ export class SyncKeyValueFileSystem extends file_system.SynchronousFileSystem {
       throw ApiError.ENOENT(parent);
     }
     var parentListing = this.getDirListing(tx, parent, parentNode);
+    if (!parentListing) {
+      throw ApiError.ENOTDIR(parent);
+    }
     var fileName: string = path.basename(p);
 
     if (!parentListing[fileName]) {
@@ -613,21 +626,27 @@ export class SyncKeyValueFileSystem extends file_system.SynchronousFileSystem {
     if (!inode) {
       throw ApiError.ENOENT(p);
     }
-    return Object.keys(this.getDirListing(tx, p, inode));
+    var listing = this.getDirListing(tx, p, inode);
+    if (!listing) {
+      throw ApiError.ENOTDIR(p);
+    }
+    return Object.keys(listing);
   }
 
   public readdir(p: string, cb: Function): void {
-    try {
-      var tx = this.store.beginTransaction('readonly');
-      var inode = this.findINode(tx, p);
-      if (!inode) {
-        staticEnoent.path = p;
-        cb(staticEnoent);
+    var tx = this.store.beginTransaction('readonly');
+    var inode = this.findINode(tx, p);
+    if (!inode) {
+      staticEnoent.path = p;
+      cb(staticEnoent);
+    } else {
+      let listing = this.getDirListing(tx, p, inode);
+      if (!listing) {
+        staticEnotdir.path = p;
+        cb(staticEnotdir);
       } else {
-        cb(null, Object.keys(this.getDirListing(tx, p, inode)));
+        cb(null, Object.keys(listing));
       }
-    } catch (e) {
-      cb(e);
     }
   }
 
