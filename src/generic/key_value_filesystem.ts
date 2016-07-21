@@ -295,6 +295,9 @@ export class SyncKeyValueFileSystem extends file_system.SynchronousFileSystem {
     } else {
       let inode = this.getINode(tx, parent + path.sep + filename,
                                 this._findINode(tx, path.dirname(parent), path.basename(parent)));
+      if (!inode) {
+        return undefined;
+      }
       return this.getDirListing(tx, parent, inode)[filename];
     }
   }
@@ -323,7 +326,7 @@ export class SyncKeyValueFileSystem extends file_system.SynchronousFileSystem {
   private getINode(tx: SyncKeyValueROTransaction, p: string, id: string): Inode {
     var inode = tx.get(id);
     if (inode === undefined) {
-      throw ApiError.ENOENT(p);
+      return undefined;
     }
     return Inode.fromBuffer(inode);
   }
@@ -463,6 +466,9 @@ export class SyncKeyValueFileSystem extends file_system.SynchronousFileSystem {
     if (newDirList[newName]) {
       // If it's a file, delete it.
       var newNameNode = this.getINode(tx, newPath, newDirList[newName]);
+      if (!newNameNode) {
+        throw ApiError.ENOENT(newPath);
+      }
       if (newNameNode.isFile()) {
         try {
           tx.del(newNameNode.id);
@@ -559,6 +565,9 @@ export class SyncKeyValueFileSystem extends file_system.SynchronousFileSystem {
 
     // Get file inode.
     var fileNode = this.getINode(tx, p, fileNodeId);
+    if (!fileNode) {
+        throw ApiError.ENOENT(p);
+    }
     if (!isDir && fileNode.isDirectory()) {
       throw ApiError.EISDIR(p);
     } else if (isDir && !fileNode.isDirectory()) {
@@ -599,13 +608,27 @@ export class SyncKeyValueFileSystem extends file_system.SynchronousFileSystem {
     this.commitNewFile(tx, p, FileType.DIRECTORY, mode, data);
   }
 
-  public readdirSync(p: string): string[]{
+  public readdirSync(p: string): string[] {
     var tx = this.store.beginTransaction('readonly');
     var inode = this.findINode(tx, p);
     if (!inode) {
       throw ApiError.ENOENT(p);
     }
     return Object.keys(this.getDirListing(tx, p, inode));
+  }
+
+  public readdir(p: string, cb: Function): void {
+    try {
+      var tx = this.store.beginTransaction('readonly');
+      var inode = this.findINode(tx, p);
+      if (!inode) {
+        cb(ApiError.ENOENT(p));
+      } else {
+        cb(null, Object.keys(this.getDirListing(tx, p, inode)));
+      }
+    } catch (e) {
+      cb(e);
+    }
   }
 
   public _syncSync(p: string, data: NodeBuffer, stats: Stats): void {
@@ -618,6 +641,9 @@ export class SyncKeyValueFileSystem extends file_system.SynchronousFileSystem {
       throw ApiError.ENOENT(p);
     }
     var fileInode = this.getINode(tx, p, fileInodeId);
+    if (!fileInode) {
+      throw ApiError.ENOENT(p);
+    }
     var inodeChanged = fileInode.update(stats);
 
     try {
