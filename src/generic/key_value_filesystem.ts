@@ -285,7 +285,10 @@ export class SyncKeyValueFileSystem extends file_system.SynchronousFileSystem {
         // BASE CASE #1: Return the root's ID.
         return ROOT_NODE_ID;
       } else {
-        let inode = this.getINode(tx, parent, ROOT_NODE_ID)
+        let inode = this.getINode(tx, parent, ROOT_NODE_ID);
+        if (!inode) {
+          return undefined;
+        }
         // BASE CASE #2: Find the item in the root ndoe.
         return this.getDirListing(tx, parent, inode)[filename];
       }
@@ -305,7 +308,7 @@ export class SyncKeyValueFileSystem extends file_system.SynchronousFileSystem {
   private findINode(tx: SyncKeyValueROTransaction, p: string): Inode {
     let inodeId = this._findINode(tx, path.dirname(p), path.basename(p));
     if (!inodeId) {
-      throw ApiError.ENOENT(p);
+      return undefined;
     }
 
     return this.getINode(tx, p, inodeId);
@@ -370,11 +373,14 @@ export class SyncKeyValueFileSystem extends file_system.SynchronousFileSystem {
    * @return The Inode for the new file.
    */
   private commitNewFile(tx: SyncKeyValueRWTransaction, p: string, type: FileType, mode: number, data: NodeBuffer): Inode {
-    var parentDir = path.dirname(p),
-      fname = path.basename(p),
-      parentNode = this.findINode(tx, parentDir),
-      dirListing = this.getDirListing(tx, parentDir, parentNode),
-      currTime = (new Date()).getTime();
+    var parentDir = path.dirname(p);
+    var fname = path.basename(p);
+    var parentNode = this.findINode(tx, parentDir);
+    if (!parentNode) {
+      throw ApiError.ENOENT(parentDir);
+    }
+    var dirListing = this.getDirListing(tx, parentDir, parentNode);
+    var currTime = (new Date()).getTime();
 
     // Invariant: The root always exists.
     // If we don't check this prior to taking steps below, we will create a
@@ -415,12 +421,15 @@ export class SyncKeyValueFileSystem extends file_system.SynchronousFileSystem {
   }
 
   public renameSync(oldPath: string, newPath: string): void {
-    var tx = this.store.beginTransaction('readwrite'),
-      oldParent = path.dirname(oldPath), oldName = path.basename(oldPath),
-      newParent = path.dirname(newPath), newName = path.basename(newPath),
+    var tx = this.store.beginTransaction('readwrite');
+    var oldParent = path.dirname(oldPath), oldName = path.basename(oldPath);
+    var newParent = path.dirname(newPath), newName = path.basename(newPath);
       // Remove oldPath from parent's directory listing.
-      oldDirNode = this.findINode(tx, oldParent),
-      oldDirList = this.getDirListing(tx, oldParent, oldDirNode);
+    var oldDirNode = this.findINode(tx, oldParent);
+    if (!oldDirNode) {
+      throw ApiError.ENOENT(oldParent);
+    }
+    var oldDirList = this.getDirListing(tx, oldParent, oldDirNode);
 
     if (!oldDirList[oldName]) {
       throw ApiError.ENOENT(oldPath);
@@ -445,6 +454,9 @@ export class SyncKeyValueFileSystem extends file_system.SynchronousFileSystem {
       newDirList = oldDirList;
     } else {
       newDirNode = this.findINode(tx, newParent);
+      if (!newDirNode) {
+        throw ApiError.ENOENT(newParent);
+      }
       newDirList = this.getDirListing(tx, newParent, newDirNode);
     }
 
@@ -480,21 +492,41 @@ export class SyncKeyValueFileSystem extends file_system.SynchronousFileSystem {
 
   public statSync(p: string, isLstat: boolean): Stats {
     // Get the inode to the item, convert it into a Stats object.
-    return this.findINode(this.store.beginTransaction('readonly'), p).toStats();
+    let inode = this.findINode(this.store.beginTransaction('readonly'), p);
+    if (!inode) {
+      throw ApiError.ENOENT(p);
+    }
+    return inode.toStats();
+  }
+
+  public stat(p: string, isLstat: boolean, cb: Function): void {
+    try {
+      let inode = this.findINode(this.store.beginTransaction('readonly'), p);
+      if (!inode) {
+        cb(ApiError.ENOENT(p));
+      } else {
+        cb(null, inode.toStats());
+      }
+    } catch (e) {
+      cb(e);
+    }
   }
 
   public createFileSync(p: string, flag: file_flag.FileFlag, mode: number): file.File {
-    var tx = this.store.beginTransaction('readwrite'),
-      data = new Buffer(0),
-      newFile = this.commitNewFile(tx, p, FileType.FILE, mode, data);
+    var tx = this.store.beginTransaction('readwrite');
+    var data = new Buffer(0);
+    var newFile = this.commitNewFile(tx, p, FileType.FILE, mode, data);
     // Open the file.
     return new SyncKeyValueFile(this, p, flag, newFile.toStats(), data);
   }
 
   public openFileSync(p: string, flag: file_flag.FileFlag): file.File {
-    var tx = this.store.beginTransaction('readonly'),
-      node = this.findINode(tx, p),
-      data = tx.get(node.id);
+    var tx = this.store.beginTransaction('readonly');
+    var node = this.findINode(tx, p);
+    if (!node) {
+      throw ApiError.ENOENT(p);
+    }
+    var data = tx.get(node.id);
     if (data === undefined) {
       throw ApiError.ENOENT(p);
     }
@@ -508,11 +540,14 @@ export class SyncKeyValueFileSystem extends file_system.SynchronousFileSystem {
    * @todo Update mtime.
    */
   private removeEntry(p: string, isDir: boolean): void {
-    var tx = this.store.beginTransaction('readwrite'),
-      parent: string = path.dirname(p),
-      parentNode = this.findINode(tx, parent),
-      parentListing = this.getDirListing(tx, parent, parentNode),
-      fileName: string = path.basename(p);
+    var tx = this.store.beginTransaction('readwrite');
+    var parent: string = path.dirname(p);
+    var parentNode = this.findINode(tx, parent);
+    if (!parentNode) {
+      throw ApiError.ENOENT(parent);
+    }
+    var parentListing = this.getDirListing(tx, parent, parentNode);
+    var fileName: string = path.basename(p);
 
     if (!parentListing[fileName]) {
       throw ApiError.ENOENT(p);
@@ -566,7 +601,11 @@ export class SyncKeyValueFileSystem extends file_system.SynchronousFileSystem {
 
   public readdirSync(p: string): string[]{
     var tx = this.store.beginTransaction('readonly');
-    return Object.keys(this.getDirListing(tx, p, this.findINode(tx, p)));
+    var inode = this.findINode(tx, p);
+    if (!inode) {
+      throw ApiError.ENOENT(p);
+    }
+    return Object.keys(this.getDirListing(tx, p, inode));
   }
 
   public _syncSync(p: string, data: NodeBuffer, stats: Stats): void {

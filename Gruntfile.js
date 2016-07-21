@@ -150,7 +150,7 @@ module.exports = function(grunt) {
       }
     },
     karma: {
-      options: karmaConfig,
+	options: karmaConfig,
       // Useful for development.
       continuous: {
         options: {
