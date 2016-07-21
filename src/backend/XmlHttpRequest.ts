@@ -8,6 +8,11 @@ import preload_file = require('../generic/preload_file');
 import xhr = require('../generic/xhr');
 import {FileIndex, DirInode, FileInode, Inode, isFileInode, isDirInode} from '../generic/file_index';
 
+let staticEnoent = ApiError.ENOENT('');
+let staticEnotdir = ApiError.ENOTDIR('');
+let staticEisdir = ApiError.EISDIR('');
+let staticEperm = ApiError.EPERM('');
+
 /**
  * Try to convert the given buffer into a string, and pass it to the callback.
  * Optimization that removes the needed try/catch into a helper function, as
@@ -154,7 +159,8 @@ export default class XmlHttpRequest extends file_system.BaseFileSystem implement
   public stat(path: string, isLstat: boolean, cb: (e: ApiError, stat?: Stats) => void): void {
     var inode = this._index.getInode(path);
     if (inode === null) {
-      return cb(ApiError.ENOENT(path));
+      staticEnoent.path = path;
+      return cb(staticEnoent);
     }
     var stats: Stats;
     if (isFileInode<Stats>(inode)) {
@@ -208,13 +214,15 @@ export default class XmlHttpRequest extends file_system.BaseFileSystem implement
   public open(path: string, flags: FileFlag, mode: number, cb: (e: ApiError, file?: file.File) => void): void {
     // INVARIANT: You can't write to files on this file system.
     if (flags.isWriteable()) {
-      return cb(new ApiError(ErrorCode.EPERM, path));
+      staticEperm.path = path;
+      return cb(staticEperm);
     }
     var _this = this;
     // Check if the path exists, and is a file.
     var inode = this._index.getInode(path);
     if (inode === null) {
-      return cb(ApiError.ENOENT(path));
+      staticEnoent.path = path
+      return cb(staticEnoent);
     }
     if (isFileInode<Stats>(inode)) {
       var stats = inode.getData();
@@ -284,10 +292,15 @@ export default class XmlHttpRequest extends file_system.BaseFileSystem implement
   }
 
   public readdir(path: string, cb: (e: ApiError, listing?: string[]) => void): void {
-    try {
-      cb(null, this.readdirSync(path));
-    } catch (e) {
-      cb(e);
+    var inode = this._index.getInode(path);
+    if (inode === null) {
+      staticEnoent.path = path;
+      cb(staticEnoent);
+    } else if (isDirInode(inode)) {
+      cb(null, inode.getListing());
+    } else {
+      staticEnotdir.path = path
+      cb(staticEnotdir);
     }
   }
 
