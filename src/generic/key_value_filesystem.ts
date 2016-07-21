@@ -346,7 +346,16 @@ export class SyncKeyValueFileSystem extends file_system.SynchronousFileSystem {
     if (data === undefined) {
       throw ApiError.ENOENT(p);
     }
-    return JSON.parse(data.toString());
+
+    // avoid JSON parsing if possible
+    if ((<any>data).listing) {
+      return (<any>data).listing;
+    }
+
+    let listing = JSON.parse(data.toString());
+    (<any>data).listing = listing;
+
+    return listing;
   }
 
   /**
@@ -411,7 +420,9 @@ export class SyncKeyValueFileSystem extends file_system.SynchronousFileSystem {
         fileNodeId = this.addNewNode(tx, fileNode.toBuffer());
       // Update and commit parent directory listing.
       dirListing[fname] = fileNodeId;
-      tx.put(parentNode.id, new Buffer(JSON.stringify(dirListing)), true);
+      let buf = new Buffer(JSON.stringify(dirListing));
+      (<any>buf).listing = dirListing;
+      tx.put(parentNode.id, buf, true);
     } catch (e) {
       tx.abort();
       throw e;
@@ -496,10 +507,15 @@ export class SyncKeyValueFileSystem extends file_system.SynchronousFileSystem {
     }
     newDirList[newName] = nodeId;
 
+    let oldBuf = new Buffer(JSON.stringify(oldDirList));
+    (<any>oldBuf).listing = oldDirList;
+    let newBuf = new Buffer(JSON.stringify(newDirList));
+    (<any>newBuf).listing = newDirList;
+
     // Commit the two changed directory listings.
     try {
-      tx.put(oldDirNode.id, new Buffer(JSON.stringify(oldDirList)), true);
-      tx.put(newDirNode.id, new Buffer(JSON.stringify(newDirList)), true);
+      tx.put(oldDirNode.id, oldBuf, true);
+      tx.put(newDirNode.id, newBuf, true);
     } catch (e) {
       tx.abort();
       throw e;
@@ -586,13 +602,16 @@ export class SyncKeyValueFileSystem extends file_system.SynchronousFileSystem {
       throw ApiError.ENOTDIR(p);
     }
 
+    let buf = new Buffer(JSON.stringify(parentListing));
+    (<any>buf).listing = parentListing;
+
     try {
       // Delete data.
       tx.del(fileNode.id);
       // Delete node.
       tx.del(fileNodeId);
       // Update directory listing.
-      tx.put(parentNode.id, new Buffer(JSON.stringify(parentListing)), true);
+      tx.put(parentNode.id, buf, true);
     } catch (e) {
       tx.abort();
       throw e;
