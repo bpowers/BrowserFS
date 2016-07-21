@@ -8,6 +8,8 @@ import Inode = require('../generic/inode');
 import preload_file = require('../generic/preload_file');
 var ROOT_NODE_ID: string = "/";
 
+let staticEnoent = ApiError.ENOENT('');
+
 /**
  * Generates a random ID.
  */
@@ -506,15 +508,12 @@ export class SyncKeyValueFileSystem extends file_system.SynchronousFileSystem {
   }
 
   public stat(p: string, isLstat: boolean, cb: Function): void {
-    try {
-      let inode = this.findINode(this.store.beginTransaction('readonly'), p);
-      if (!inode) {
-        cb(ApiError.ENOENT(p));
-      } else {
-        cb(null, inode.toStats());
-      }
-    } catch (e) {
-      cb(e);
+    let inode = this.findINode(this.store.beginTransaction('readonly'), p);
+    if (!inode) {
+      staticEnoent.path = p;
+      cb(staticEnoent);
+    } else {
+      cb(null, inode.toStats());
     }
   }
 
@@ -622,7 +621,8 @@ export class SyncKeyValueFileSystem extends file_system.SynchronousFileSystem {
       var tx = this.store.beginTransaction('readonly');
       var inode = this.findINode(tx, p);
       if (!inode) {
-        cb(ApiError.ENOENT(p));
+        staticEnoent.path = p;
+        cb(staticEnoent);
       } else {
         cb(null, Object.keys(this.getDirListing(tx, p, inode)));
       }
