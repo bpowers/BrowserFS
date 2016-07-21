@@ -280,27 +280,19 @@ export class SyncKeyValueFileSystem extends file_system.SynchronousFileSystem {
    * @return string The ID of the file's inode in the file system.
    */
   private _findINode(tx: SyncKeyValueROTransaction, parent: string, filename: string): string {
-    var read_directory = (inode: Inode): string => {
-      // Get the root's directory listing.
-      var dirList = this.getDirListing(tx, parent, inode);
-      // Get the file's ID.
-      if (dirList[filename]) {
-        return dirList[filename];
-      } else {
-        throw ApiError.ENOENT(path.resolve(parent, filename));
-      }
-    };
     if (parent === '/') {
       if (filename === '') {
         // BASE CASE #1: Return the root's ID.
         return ROOT_NODE_ID;
       } else {
+        let inode = this.getINode(tx, parent, ROOT_NODE_ID)
         // BASE CASE #2: Find the item in the root ndoe.
-        return read_directory(this.getINode(tx, parent, ROOT_NODE_ID));
+        return this.getDirListing(tx, parent, inode)[filename];
       }
     } else {
-      return read_directory(this.getINode(tx, parent + path.sep + filename,
-        this._findINode(tx, path.dirname(parent), path.basename(parent))));
+      let inode = this.getINode(tx, parent + path.sep + filename,
+                                this._findINode(tx, path.dirname(parent), path.basename(parent)));
+      return this.getDirListing(tx, parent, inode)[filename];
     }
   }
 
@@ -311,7 +303,12 @@ export class SyncKeyValueFileSystem extends file_system.SynchronousFileSystem {
    * @todo memoize/cache
    */
   private findINode(tx: SyncKeyValueROTransaction, p: string): Inode {
-    return this.getINode(tx, p, this._findINode(tx, path.dirname(p), path.basename(p)));
+    let inodeId = this._findINode(tx, path.dirname(p), path.basename(p));
+    if (!inodeId) {
+      throw ApiError.ENOENT(p);
+    }
+
+    return this.getINode(tx, p, inodeId);
   }
 
   /**
@@ -575,11 +572,14 @@ export class SyncKeyValueFileSystem extends file_system.SynchronousFileSystem {
   public _syncSync(p: string, data: NodeBuffer, stats: Stats): void {
     // @todo Ensure mtime updates properly, and use that to determine if a data
     //       update is required.
-    var tx = this.store.beginTransaction('readwrite'),
+    var tx = this.store.beginTransaction('readwrite');
       // We use the _findInode helper because we actually need the INode id.
-      fileInodeId = this._findINode(tx, path.dirname(p), path.basename(p)),
-      fileInode = this.getINode(tx, p, fileInodeId),
-      inodeChanged = fileInode.update(stats);
+    var fileInodeId = this._findINode(tx, path.dirname(p), path.basename(p));
+    if (!fileInodeId) {
+      throw ApiError.ENOENT(p);
+    }
+    var fileInode = this.getINode(tx, p, fileInodeId);
+    var inodeChanged = fileInode.update(stats);
 
     try {
       // Sync data.
