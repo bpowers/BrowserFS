@@ -106,7 +106,9 @@ export default class Stats implements fs.Stats {
    * @return [BrowserFS.node.fs.Stats]
    */
   public clone(): Stats {
-    return new Stats(this.mode & 0xF000, this.size, this.mode & 0xFFF, this.atime, this.mtime, this.ctime);
+    let stats = new Stats(this.mode & 0xF000, this.size, this.mode & 0xFFF, this.atime, this.mtime, this.ctime);
+    stats.ino = this.ino;
+    return stats;
   }
 
   /**
