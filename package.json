@@ -1,6 +1,6 @@
 {
   "name": "browserfs-browsix-tmp",
-  "version": "0.5.13",
+  "version": "0.5.14",
   "description": "A filesystem in your browser!",
   "main": "dist/browserfs.js",
   "typings": "dist/node/main",
