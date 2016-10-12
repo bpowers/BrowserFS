@@ -243,8 +243,11 @@ export class SyncKeyValueFile extends preload_file.PreloadFile<SyncKeyValueFileS
  */
 export class SyncKeyValueFileSystem extends file_system.SynchronousFileSystem {
   private store: SyncKeyValueStore;
+  private nextIno: number = 1;
+  private devId: number;
   constructor(options: SyncKeyValueFileSystemOptions) {
     super();
+    this.devId = file_system.allocDev();
     this.store = options.store;
     // INVARIANT: Ensure that the root exists.
     this.makeRootDirectory();
@@ -258,15 +261,24 @@ export class SyncKeyValueFileSystem extends file_system.SynchronousFileSystem {
   public supportsSynch(): boolean { return true; }
 
   /**
+   * Returns a new, unique integer inode id.
+   * @return [number]
+   */
+  public allocIno(): number {
+    return this.nextIno++;
+  }
+
+  /**
    * Checks if the root directory exists. Creates it if it doesn't.
    */
   private makeRootDirectory() {
     var tx = this.store.beginTransaction('readwrite');
     if (tx.get(ROOT_NODE_ID) === undefined) {
       // Create new inode.
-      var currTime = (new Date()).getTime(),
-        // Mode 0666
-        dirInode = new Inode(GenerateRandomID(), 4096, 511 | FileType.DIRECTORY, currTime, currTime, currTime);
+      let currTime = (new Date()).getTime();
+      let mode = 0o777 | FileType.DIRECTORY;
+      let dirInode = new Inode(GenerateRandomID(), this.devId, this.allocIno(), 4096, mode,
+                               currTime, currTime, currTime);
       // If the root doesn't exist, the first random ID shouldn't exist,
       // either.
       tx.put(dirInode.id, new Buffer("{}"), false);
@@ -292,7 +304,7 @@ export class SyncKeyValueFileSystem extends file_system.SynchronousFileSystem {
         if (!inode) {
           return undefined;
         }
-        // BASE CASE #2: Find the item in the root ndoe.
+        // BASE CASE #2: Find the item in the root directory.
         return this.getDirListing(tx, parent, inode)[filename];
       }
     } else {
@@ -412,12 +424,13 @@ export class SyncKeyValueFileSystem extends file_system.SynchronousFileSystem {
       throw ApiError.EEXIST(p);
     }
 
+    let fileNode: Inode;
     try {
       // Commit data.
-      var dataId = this.addNewNode(tx, data),
-        fileNode = new Inode(dataId, data.length, mode | type, currTime, currTime, currTime),
-        // Commit file node.
-        fileNodeId = this.addNewNode(tx, fileNode.toBuffer());
+      let dataId = this.addNewNode(tx, data);
+      fileNode = new Inode(dataId, this.devId, this.allocIno(), data.length, mode | type, currTime, currTime, currTime);
+      // Commit file node.
+      let fileNodeId = this.addNewNode(tx, fileNode.toBuffer());
       // Update and commit parent directory listing.
       dirListing[fname] = fileNodeId;
       let buf = new Buffer(JSON.stringify(dirListing));
@@ -793,12 +806,15 @@ export class AsyncKeyValueFile extends preload_file.PreloadFile<AsyncKeyValueFil
  */
 export class AsyncKeyValueFileSystem extends file_system.BaseFileSystem {
   private store: AsyncKeyValueStore;
+  private nextIno: number = 1;
+  private devId: number;
 
   /**
    * Initializes the file system. Typically called by subclasses' async
    * constructors.
    */
   public init(store: AsyncKeyValueStore, cb: (e?: ApiError) => void) {
+    this.devId = file_system.allocDev();
     this.store = store;
     // INVARIANT: Ensure that the root exists.
     this.makeRootDirectory(cb);
@@ -812,6 +828,14 @@ export class AsyncKeyValueFileSystem extends file_system.BaseFileSystem {
   public supportsSynch(): boolean { return false; }
 
   /**
+   * Returns a new, unique integer inode id.
+   * @return [number]
+   */
+  public allocIno(): number {
+    return this.nextIno++;
+  }
+
+  /**
    * Checks if the root directory exists. Creates it if it doesn't.
    */
   private makeRootDirectory(cb: (e?: ApiError) => void) {
@@ -819,9 +843,8 @@ export class AsyncKeyValueFileSystem extends file_system.BaseFileSystem {
     tx.get(ROOT_NODE_ID, (e: ApiError, data?: NodeBuffer) => {
       if (e || data === undefined) {
         // Create new inode.
-        var currTime = (new Date()).getTime(),
-          // Mode 0666
-          dirInode = new Inode(GenerateRandomID(), 4096, 511 | FileType.DIRECTORY, currTime, currTime, currTime);
+        var currTime = (new Date()).getTime();
+        var dirInode = new Inode(GenerateRandomID(), this.devId, this.allocIno(), 4096, 0o777 | FileType.DIRECTORY, currTime, currTime, currTime);
         // If the root doesn't exist, the first random ID shouldn't exist,
         // either.
         tx.put(dirInode.id, new Buffer("{}"), false, (e?: ApiError) => {
@@ -1018,7 +1041,7 @@ export class AsyncKeyValueFileSystem extends file_system.BaseFileSystem {
           this.addNewNode(tx, data, (e: ApiError, dataId?: string): void => {
             if (noErrorTx(e, tx, cb)) {
               // Step 3: Commit the file's inode to the store.
-              var fileInode = new Inode(dataId, data.length, mode | type, currTime, currTime, currTime);
+              var fileInode = new Inode(dataId, this.devId, this.allocIno(), data.length, mode | type, currTime, currTime, currTime);
               this.addNewNode(tx, fileInode.toBuffer(), (e: ApiError, fileInodeId?: string): void => {
                 if (noErrorTx(e, tx, cb)) {
                   // Step 4: Update parent directory's listing.
