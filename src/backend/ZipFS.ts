@@ -694,12 +694,13 @@ export default class ZipFS extends file_system.SynchronousFileSystem implements 
       filename = filename.substr(0, filename.length-1);
     }
 
+    let dev = index.devId;
     let ino = index.allocIno();
 
     if (cd.isDirectory()) {
-      index.addPathFast('/' + filename, new DirInode<CentralDirectory>(ino, cd));
+      index.addPathFast('/' + filename, new DirInode<CentralDirectory>(dev, ino, cd));
     } else {
-      index.addPathFast('/' + filename, new FileInode<CentralDirectory>(ino, cd));
+      index.addPathFast('/' + filename, new FileInode<CentralDirectory>(dev, ino, cd));
     }
   }
 

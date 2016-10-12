@@ -1015,3 +1015,11 @@ export class SynchronousFileSystem extends BaseFileSystem {
     }
   }
 }
+
+let nextDev = 1;
+/**
+ * Allocates a unique device ID for a filesystem instance
+ */
+export function allocDev(): number {
+  return nextDev++;
+}

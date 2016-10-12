@@ -1,3 +1,4 @@
+import {allocDev} from '../core/file_system';
 import {default as Stats, FileType} from '../core/node_fs_stats';
 import path = require('path');
 
@@ -12,16 +13,22 @@ export class FileIndex<T> {
   // Maps directory paths to directory inodes, which contain files.
   private _index: {[path: string]: DirInode<T>}
   private _nextIno: number = 1;
+  private _devId: number;
 
   /**
    * Constructs a new FileIndex.
    */
   constructor() {
+    this._devId = allocDev();
     // _index is a single-level key,value store that maps *directory* paths to
     // DirInodes. File information is only contained in DirInodes themselves.
     this._index = {};
     // Create the root directory.
-    this.addPath('/', new DirInode(this.allocIno()));
+    this.addPath('/', new DirInode(this.devId, this.allocIno()));
+  }
+
+  get devId(): number {
+    return this._devId;
   }
 
   /**
@@ -81,7 +88,7 @@ export class FileIndex<T> {
     var parent = this._index[dirpath];
     if (parent === undefined && path !== '/') {
       // Create parent.
-      parent = new DirInode<T>(this.allocIno());
+      parent = new DirInode<T>(this.devId, this.allocIno());
       if (!this.addPath(dirpath, parent)) {
         return false;
       }
@@ -122,7 +129,7 @@ export class FileIndex<T> {
     let parent = this._index[parentPath];
     if (parent === undefined) {
       // Create parent.
-      parent = new DirInode<T>(this.allocIno());
+      parent = new DirInode<T>(this.devId, this.allocIno());
       this.addPathFast(parentPath, parent);
     }
 
@@ -223,7 +230,7 @@ export class FileIndex<T> {
   public static fromListing<T>(listing): FileIndex<T> {
     var idx = new FileIndex<T>();
     // Add a root DirNode.
-    var rootInode = new DirInode<T>(idx.allocIno());
+    var rootInode = new DirInode<T>(idx.devId, idx.allocIno());
     idx._index['/'] = rootInode;
     var queue = [['', listing, rootInode]];
     while (queue.length > 0) {
@@ -236,14 +243,16 @@ export class FileIndex<T> {
         var children = tree[node];
         var name = "" + pwd + "/" + node;
         if (children != null) {
-          idx._index[name] = inode = new DirInode<T>(idx.allocIno());
+          idx._index[name] = inode = new DirInode<T>(idx.devId, idx.allocIno());
           queue.push([name, children, inode]);
         } else {
+          let dev = idx.devId;
           let ino = idx.allocIno();
           let stats = new Stats(FileType.FILE, -1, 0x16D);
+          stats.dev = dev;
           stats.ino = ino;
           // This inode doesn't have correct size information, noted with -1.
-          inode = new FileInode<Stats>(ino, stats);
+          inode = new FileInode<Stats>(dev, ino, stats);
         }
         if (parent != null) {
           parent._ls[node] = inode;
@@ -263,6 +272,7 @@ export interface Inode {
   isFile(): boolean;
   // Is this an inode for a directory?
   isDir(): boolean;
+  getDev(): number;
   getIno(): number;
 }
 
@@ -270,9 +280,18 @@ export interface Inode {
  * Inode for a file. Stores an arbitrary (filesystem-specific) data payload.
  */
 export class FileInode<T> implements Inode {
-  constructor(private ino: number, private data: T) { }
+  private dev: number;
+  private ino: number;
+  private data: T;
+
+  constructor(dev: number, ino: number, data: T) {
+    this.dev = dev;
+    this.ino = ino;
+    this.data = data;
+  }
   public isFile(): boolean { return true; }
   public isDir(): boolean { return false; }
+  public getDev(): number { return this.dev; }
   public getIno(): number { return this.ino; }
   public getData(): T { return this.data; }
   public setData(data: T): void { this.data = data; }
@@ -286,7 +305,7 @@ export class DirInode<T> implements Inode {
   /**
    * Constructs an inode for a directory.
    */
-  constructor(private ino: number, private data: T = null) {}
+  constructor(private dev: number, private ino: number, private data: T = null) {}
 
   public isFile(): boolean {
     return false;
@@ -296,6 +315,7 @@ export class DirInode<T> implements Inode {
     return true;
   }
 
+  public getDev(): number { return this.dev; }
   public getIno(): number { return this.ino; }
 
   public getData(): T { return this.data; }
@@ -308,6 +328,7 @@ export class DirInode<T> implements Inode {
    */
   public getStats(): Stats {
     let stats = new Stats(FileType.DIRECTORY, 4096, 0x16D);
+    stats.dev = this.dev;
     stats.ino = this.ino;
     return stats;
   }
