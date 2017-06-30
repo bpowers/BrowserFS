@@ -18,6 +18,7 @@
         "src/backend/Dropbox.ts",
         "src/backend/FolderAdapter.ts",
         "src/backend/HTML5FS.ts",
+        "src/backend/DOMFS.ts",
         "src/backend/InMemory.ts",
         "src/backend/IndexedDB.ts",
         "src/backend/LocalStorage.ts",
