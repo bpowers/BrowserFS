@@ -49,6 +49,13 @@ function noErrorTx(e: ApiError, tx: AsyncKeyValueRWTransaction, cb: (e: ApiError
 }
 
 /**
+ * Helper function to convert Buffer to String.
+ */
+ function BufferToString(buf: Buffer): string {
+   return String.fromCharCode.apply(null, new Uint8Array(buf['data']['buff']['buffer']));
+ }
+
+/**
  * Represents a *synchronous* key-value store.
  */
 export interface SyncKeyValueStore {
@@ -301,23 +308,21 @@ export class SyncKeyValueFileSystem extends file_system.SynchronousFileSystem {
         // BASE CASE #1: Return the root's ID.
         return ROOT_NODE_ID;
       } else {
-        inode = this.getINode(tx, parent, ROOT_NODE_ID) || 
-        this.getINode(tx, parent + path.sep + filename, ROOT_NODE_ID);
-        if (!inode) {
-          return undefined;
-        }
+        inode = this.getINode(tx, parent, ROOT_NODE_ID)
       }
     } else {
-      inode = this.getINode(tx, parent + path.sep + filename,
-                                this._findINode(tx, path.dirname(parent), path.basename(parent))) || 
-      this.getINode(tx, parent + path.sep + filename, ROOT_NODE_ID);
-      if (!inode) {
-        return undefined;
-      }
+      inode = this.getINode(tx, parent + path.sep + filename, this._findINode(tx, path.dirname(parent), path.basename(parent)))
     }
 
-    return this.getDirListing(tx, parent, inode)[filename] ||
-    this.getDirListing(tx, parent, inode)[parent.substring(1) + path.sep + filename];
+    if (!inode) {
+      // check if symlink with this path exists
+      inode = this.getINode(tx, parent + path.sep + filename, ROOT_NODE_ID);
+
+      return !inode ? undefined : 
+      this.getDirListing(tx, parent, inode)[parent.substring(1) + path.sep + filename];
+    }
+
+    return this.getDirListing(tx, parent, inode)[filename];
   }
 
   /**
@@ -332,7 +337,12 @@ export class SyncKeyValueFileSystem extends file_system.SynchronousFileSystem {
       return undefined;
     }
 
-    return this.getINode(tx, p, inodeId);
+    var inode = this.getINode(tx, p, inodeId);
+
+    if (inode.isSymbolicLink()) {
+      return this.findINode(tx, BufferToString(tx.get(inode.id)));
+    }
+    return inode;
   }
 
   /**
