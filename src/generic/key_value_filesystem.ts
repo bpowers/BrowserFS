@@ -316,7 +316,8 @@ export class SyncKeyValueFileSystem extends file_system.SynchronousFileSystem {
       }
     }
 
-    return inode.isSymbolicLink() ? inode.id : this.getDirListing(tx, parent, inode)[filename];
+    return this.getDirListing(tx, parent, inode)[filename] ||
+    this.getDirListing(tx, parent, inode)[parent.substring(1) + path.sep + filename];
   }
 
   /**
@@ -722,7 +723,11 @@ export class SyncKeyValueFileSystem extends file_system.SynchronousFileSystem {
   }
 
   public symlink(srcpath: string, dstpath: string, type: string, cb: Function): void {
-    console.log('here');
+    try {
+      cb(null, this.symlinkSync(srcpath, dstpath, type));
+    } catch (e) {
+      cb(e);
+    }
   }
 
   public symlinkSync(srcpath: string, dstpath: string, type: string): void {
@@ -730,16 +735,6 @@ export class SyncKeyValueFileSystem extends file_system.SynchronousFileSystem {
     var data = new Buffer(srcpath);
     this.commitNewFile(tx, dstpath, FileType.SYMLINK, null, data);
   }
-
-  public readlink(p: string, cb: Function): void {
-    console.log('here');
-  }
-  
-  public readlinkSync(p: string): string {
-    console.log('here');
-    return "";
-  }
-
 }
 
 /**
