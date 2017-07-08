@@ -64,6 +64,9 @@ export default class Stats implements fs.Stats {
     public ctime: Date = new Date()) {
     if (this.mode == null) {
       switch(item_type) {
+        case FileType.SYMLINK:
+          this.mode = 0x1af;
+          break;
         case FileType.FILE:
           this.mode = 0x1a4;
           break;

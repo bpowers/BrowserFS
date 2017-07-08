@@ -136,4 +136,7 @@ export default class DOMFS extends kvfs.SyncKeyValueFileSystem {
 
     return dirPath + tagName + suffix;
   }
+
+  public supportsSymlinks(): boolean { return true; }
+
 }

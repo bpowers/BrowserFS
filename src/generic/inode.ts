@@ -17,9 +17,17 @@ class Inode {
    * Handy function that converts the Inode to a Node Stats object.
    */
   public toStats(): Stats {
-    let stats = new Stats(
-      (this.mode & 0xF000) === FileType.DIRECTORY ? FileType.DIRECTORY : FileType.FILE,
-      this.size, this.mode, new Date(this.atime), new Date(this.mtime), new Date(this.ctime));
+    let fileType: number;
+
+    if ((this.mode & 0xF000) === FileType.DIRECTORY) {
+      fileType = FileType.DIRECTORY;
+    } else if ((this.mode & 0xF000) === FileType.SYMLINK) {
+      fileType = FileType.SYMLINK;
+    } else {
+      fileType = FileType.FILE;
+    }
+
+    let stats = new Stats(fileType, this.size, this.mode, new Date(this.atime), new Date(this.mtime), new Date(this.ctime));
     stats.dev = this.dev;
     stats.ino = this.ino;
     return stats;
@@ -124,6 +132,13 @@ class Inode {
    */
   public isDirectory(): boolean {
     return (this.mode & 0xF000) === FileType.DIRECTORY;
+  }
+
+  /**
+   * @return [Boolean] True if this item is a symlink.
+   */
+  public isSymbolicLink(): boolean {
+    return (this.mode & 0xF000) === FileType.SYMLINK;
   }
 }
 
