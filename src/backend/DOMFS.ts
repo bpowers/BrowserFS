@@ -1,6 +1,7 @@
 import kvfs = require('../generic/key_value_filesystem');
 import {default as Stats, FileType} from '../core/node_fs_stats';
 import {FileFlag, ActionType} from '../core/file_flag';
+import path = require('path');
 
 /**
  * A simple dom key-value store backed by a JavaScript object.
@@ -50,16 +51,17 @@ export default class DOMFS extends kvfs.SyncKeyValueFileSystem {
     
     this.bfs(this.root, (node: Node) => {
       
-      // create directory
+      // Create directory
       let basePath: string = this.getPath(node);
       let dirName: string = this.getTagName(node);
       let dirPath: string = this.appendCount(basePath, dirName);
       this.mkdirSync(dirPath, FileType.DIRECTORY);
 
-      // create children subdirectory
+      // Create children subdirectory
       this.mkdirSync(dirPath + "/children", FileType.DIRECTORY);
+      this.mkdirSync(dirPath + "/child-by-id", FileType.DIRECTORY);
 
-      // create attribute files
+      // Create attribute files
       if (node.attributes != null) {
         for (let i: number = 0; i < node.attributes.length; i++) {
           let fname: string = dirPath + "/" + node.attributes[i].name.toLowerCase(); 
@@ -67,9 +69,13 @@ export default class DOMFS extends kvfs.SyncKeyValueFileSystem {
           this.createFileSync(fname, FileFlag.getFileFlag('w'), 511);
           this.writeFileSync(fname, data, 'utf8', FileFlag.getFileFlag('w'), 511);
         }
-      }
 
-      // TODO: create links
+        if (node.attributes['id']) {
+          let dstpath = path.resolve(dirPath, "../../child-by-id");
+          let srcpath = path.relative(dstpath, dirPath);
+          this.symlinkSync(srcpath, dstpath + path.sep + node.attributes['id'].value, 'dir');
+        }
+      }
     })
   }
 
