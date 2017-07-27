@@ -1,6 +1,7 @@
 import kvfs = require('../generic/key_value_filesystem');
 import {default as Stats, FileType} from '../core/node_fs_stats';
 import {FileFlag, ActionType} from '../core/file_flag';
+import file = require('../core/file');
 import path = require('path');
 
 /**
@@ -8,7 +9,6 @@ import path = require('path');
  */
 export class DOMFSStore implements kvfs.SyncKeyValueStore, kvfs.SimpleSyncStore {
   private store: { [key: string]: NodeBuffer } = {};
-
   public name() { return 'domfs'; }
   public clear() { this.store = {}; }
 
@@ -37,7 +37,6 @@ export class DOMFSStore implements kvfs.SyncKeyValueStore, kvfs.SimpleSyncStore 
  * A simple dom file system backed by an DOMFSStore.
  */
 export default class DOMFS extends kvfs.SyncKeyValueFileSystem {
-
   private root: Node;
   private pathTagNameMap: {[key: string]: {[key: string]: number}} = {};
 
@@ -144,5 +143,30 @@ export default class DOMFS extends kvfs.SyncKeyValueFileSystem {
   }
 
   public supportsSymlinks(): boolean { return true; }
+
+  public renameSync(oldPath: string, newPath: string): void {
+    //TODO: Add logic to edit the DOM tree
+    super.renameSync(oldPath, newPath);
+  }
+
+  public createFileSync(p: string, flag: FileFlag, mode: number): file.File {
+    //TODO: Add logic to edit the DOM tree
+    return super.createFileSync(p, flag, mode);
+  }
+
+  public unlinkSync(p: string): void {
+    //TODO: Add logic to edit the DOM tree
+    super.unlinkSync(p);
+  }
+
+  public rmdirSync(p: string): void {
+    //TODO: Add logic to edit the DOM tree
+    super.rmdirSync(p);
+  }
+
+  public mkdirSync(p: string, mode: number): void {
+    //TODO: Add logic to edit the DOM tree
+    super.mkdirSync(p, mode);
+  }
 
 }
