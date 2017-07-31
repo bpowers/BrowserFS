@@ -142,6 +142,48 @@ export default class DOMFS extends kvfs.SyncKeyValueFileSystem {
     return dirPath + tagName + suffix;
   }
 
+  private getParentNode(p: string): Node {
+    let currNode: Node = null;
+    let parentPath: string = path.dirname(p);
+
+    let pathTokens: Array<string> = parentPath.split('/');
+    let isID: boolean = false;
+    for (let i: number = 0; i < pathTokens.length; i++) {
+      if (pathTokens[i] == '' || pathTokens[i] == 'children') {
+        isID = false;
+      } else if (pathTokens[i] == 'child-by-id') {
+        isID = true;
+      } else if (pathTokens[i] == 'document') {
+        currNode = this.root;
+      } else {
+        if (isID) {
+          currNode = document.getElementById(pathTokens[i])
+          isID = false;
+        } else {
+          let nameTokens: Array<string> = pathTokens[i].split('-');
+          let name: string = nameTokens[0];
+          let count: number = 0;
+          let currCount: number = 0;
+          if (nameTokens.length > 1) {
+            count = parseInt(nameTokens[1]);
+          }
+
+          for(let j = 0; j < currNode.childNodes.length; j++)
+          {
+            let node: Node = currNode.childNodes[j];
+            if (node.nodeType == Node.ELEMENT_NODE && this.getTagName(node) == name) {
+              if (currCount == count) {
+                currNode = node;
+                break;
+              }
+            }
+          }
+        }
+      }
+    }
+    return currNode;
+  }
+
   public supportsSymlinks(): boolean { return true; }
 
   public renameSync(oldPath: string, newPath: string): void {
@@ -161,6 +203,7 @@ export default class DOMFS extends kvfs.SyncKeyValueFileSystem {
 
   public rmdirSync(p: string): void {
     //TODO: Add logic to edit the DOM tree
+    let domNode: Node = this.getParentNode(p);
     super.rmdirSync(p);
   }
 
