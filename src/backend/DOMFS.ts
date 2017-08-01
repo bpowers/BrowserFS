@@ -48,32 +48,39 @@ export default class DOMFS extends kvfs.SyncKeyValueFileSystem {
 
   private loadDomTree(): void {
     
-    this.bfs(this.root, (node: Node) => {
+    this.bfs(this.root, (node: any) => {
       
       // Create directory
       let basePath: string = this.getPath(node);
       let dirName: string = this.getTagName(node);
       let dirPath: string = this.appendCount(basePath, dirName);
-      this.mkdirSync(dirPath, FileType.DIRECTORY);
+      super.mkdirSync(dirPath, FileType.DIRECTORY);
 
       // Create children subdirectory
-      this.mkdirSync(dirPath + "/children", FileType.DIRECTORY);
-      this.mkdirSync(dirPath + "/child-by-id", FileType.DIRECTORY);
+      super.mkdirSync(dirPath + "/children", FileType.DIRECTORY);
+      super.mkdirSync(dirPath + "/child-by-id", FileType.DIRECTORY);
 
       // Create attribute files
       if (node.attributes != null) {
         for (let i: number = 0; i < node.attributes.length; i++) {
           let fname: string = dirPath + "/" + node.attributes[i].name.toLowerCase(); 
           let data: any = node.attributes[i].value;
-          this.createFileSync(fname, FileFlag.getFileFlag('w'), 511);
-          this.writeFileSync(fname, data, 'utf8', FileFlag.getFileFlag('w'), 511);
+          super.createFileSync(fname, FileFlag.getFileFlag('w'), 511);
+          super.writeFileSync(fname, data, 'utf8', FileFlag.getFileFlag('w'), 511);
         }
 
         if (node.attributes['id']) {
           let dstpath = path.resolve(dirPath, "../../child-by-id");
           let srcpath = path.relative(dstpath, dirPath);
-          this.symlinkSync(srcpath, dstpath + path.sep + node.attributes['id'].value, 'dir');
+          super.symlinkSync(srcpath, dstpath + path.sep + node.attributes['id'].value, 'dir');
         }
+      }
+      // Create innerText file
+      if (node.innerText) {
+        let fname: string = dirPath + "/innerText";
+        let data: any = node.innerText;
+        super.createFileSync(fname, FileFlag.getFileFlag('w'), 511);
+        super.writeFileSync(fname, data, 'utf8', FileFlag.getFileFlag('w'), 511);
       }
     })
   }
@@ -121,6 +128,16 @@ export default class DOMFS extends kvfs.SyncKeyValueFileSystem {
     return tagName.toLowerCase();
   }
 
+  private getTag(t: string): any {
+    let nameTokens: Array<string> = t.split('-');
+    let name: string = nameTokens[0];
+    let count: number = 0;
+    if (nameTokens.length > 1) {
+      count = parseInt(nameTokens[1]);
+    }
+    return {"name": name, "id": count};
+  }
+
   private appendCount(dirPath: string, tagName: string): string {
     if (this.pathTagNameMap.hasOwnProperty(dirPath)) {
       if (this.pathTagNameMap[dirPath].hasOwnProperty(tagName)) {
@@ -142,11 +159,9 @@ export default class DOMFS extends kvfs.SyncKeyValueFileSystem {
     return dirPath + tagName + suffix;
   }
 
-  private getParentNode(p: string): Node {
+  private getNode(p: string): Node {
     let currNode: Node = null;
-    let parentPath: string = path.dirname(p);
-
-    let pathTokens: Array<string> = parentPath.split('/');
+    let pathTokens: Array<string> = p.split('/');
     let isID: boolean = false;
     for (let i: number = 0; i < pathTokens.length; i++) {
       if (pathTokens[i] == '' || pathTokens[i] == 'children') {
@@ -160,21 +175,17 @@ export default class DOMFS extends kvfs.SyncKeyValueFileSystem {
           currNode = document.getElementById(pathTokens[i])
           isID = false;
         } else {
-          let nameTokens: Array<string> = pathTokens[i].split('-');
-          let name: string = nameTokens[0];
-          let count: number = 0;
+          let tag: any = this.getTag(pathTokens[i])
           let currCount: number = 0;
-          if (nameTokens.length > 1) {
-            count = parseInt(nameTokens[1]);
-          }
-
           for(let j = 0; j < currNode.childNodes.length; j++)
           {
             let node: Node = currNode.childNodes[j];
-            if (node.nodeType == Node.ELEMENT_NODE && this.getTagName(node) == name) {
-              if (currCount == count) {
+            if (node.nodeType == Node.ELEMENT_NODE && this.getTagName(node) == tag["name"]) {
+              if (currCount == tag["count"]) {
                 currNode = node;
                 break;
+              } else {
+                currCount++;
               }
             }
           }
@@ -187,28 +198,51 @@ export default class DOMFS extends kvfs.SyncKeyValueFileSystem {
   public supportsSymlinks(): boolean { return true; }
 
   public renameSync(oldPath: string, newPath: string): void {
-    //TODO: Add logic to edit the DOM tree
+    let child: Node = this.getNode(path.dirname(oldPath) + path.sep + path.basename(oldPath));
+    let oldParent: Node = child.parentNode;
+    let newParent: Node = this.getNode(path.dirname(newPath));
+    oldParent.removeChild(child);
+    newParent.appendChild(child);
     super.renameSync(oldPath, newPath);
   }
 
   public createFileSync(p: string, flag: FileFlag, mode: number): file.File {
-    //TODO: Add logic to edit the DOM tree
+    let parent: Node = this.getNode(path.dirname(p));
+    if (path.basename(p) == 'innerText') {
+      let newNode: Node = document.createTextNode(path.basename(p));
+      parent.appendChild(newNode);  
+    } else {
+      // TODO: Check how to add attributes
+    }
     return super.createFileSync(p, flag, mode);
   }
 
   public unlinkSync(p: string): void {
-    //TODO: Add logic to edit the DOM tree
+    let parent: Node = this.getNode(path.dirname(p));
+    let tag: any = this.getTag(path.basename(p));
+    let currCount: number = 0;
+    for (let i: number = 0; i < parent.childNodes.length; i++) {
+      let currNode: Node = parent.childNodes[i];
+      if (this.getTagName(currNode) == tag["name"] && currCount == tag["id"]) {
+        parent.removeChild(currNode);
+        break;
+      }
+    }
     super.unlinkSync(p);
   }
 
   public rmdirSync(p: string): void {
-    //TODO: Add logic to edit the DOM tree
-    let domNode: Node = this.getParentNode(p);
+    let child: Node = this.getNode(path.dirname(p) + path.sep + path.basename(p));
+    let parent: Node = child.parentNode;
+    parent.removeChild(child);
     super.rmdirSync(p);
   }
 
   public mkdirSync(p: string, mode: number): void {
-    //TODO: Add logic to edit the DOM tree
+    let parent: Node = this.getNode(path.dirname(p));
+    let tag: any = this.getTag(path.basename(p));
+    let newNode: Node = document.createElement(tag["name"]);
+    parent.appendChild(newNode);
     super.mkdirSync(p, mode);
   }
 
