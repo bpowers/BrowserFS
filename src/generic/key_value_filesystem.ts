@@ -473,6 +473,8 @@ export class SyncKeyValueFileSystem extends file_system.SynchronousFileSystem {
 
   public renameSync(oldPath: string, newPath: string): void {
     var tx = this.store.beginTransaction('readwrite');
+    oldPath = path.resolve(oldPath);
+    newPath = path.resolve(newPath);
     var oldParent = path.dirname(oldPath), oldName = path.basename(oldPath);
     var newParent = path.dirname(newPath), newName = path.basename(newPath);
       // Remove oldPath from parent's directory listing.

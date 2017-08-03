@@ -181,7 +181,7 @@ export default class DOMFS extends kvfs.SyncKeyValueFileSystem {
           {
             let node: Node = currNode.childNodes[j];
             if (node.nodeType == Node.ELEMENT_NODE && this.getTagName(node) == tag["name"]) {
-              if (currCount == tag["count"]) {
+              if (currCount == tag["id"]) {
                 currNode = node;
                 break;
               } else {
@@ -198,17 +198,32 @@ export default class DOMFS extends kvfs.SyncKeyValueFileSystem {
   public supportsSymlinks(): boolean { return true; }
 
   public renameSync(oldPath: string, newPath: string): void {
-    let child: Node = this.getNode(path.dirname(oldPath) + path.sep + path.basename(oldPath));
-    let oldParent: Node = child.parentNode;
-    let newParent: Node = this.getNode(path.dirname(newPath));
-    oldParent.removeChild(child);
-    newParent.appendChild(child);
+    let child: any = this.getNode(path.dirname(oldPath) + path.sep + path.basename(oldPath));
+    let oldParent: any = child.parentNode;
+    let newParent: any = this.getNode(path.dirname(newPath));
+    // Check if tag or attribute
+    if (this.getTagName(child) != path.basename(oldPath).toLowerCase()) {
+      if (path.basename(oldPath) == 'innerText' && this.getTagName(child) != 'document') {
+        newParent.innerText = child.innerText;       
+      } else if (path.basename(oldPath) == 'id') {
+        // TODO: Discuss what to do?
+      } else {
+        if (oldParent.hasAttribute(path.basename(oldPath))) {
+          newParent.setAttribute(path.basename(oldPath), child.getAttribute(this.getTag(path.basename(oldPath))));  
+        } else {
+          // TODO: What error?
+        }
+      }
+    } else {
+      oldParent.removeChild(child);
+      newParent.appendChild(child);
+    }
     super.renameSync(oldPath, newPath);
   }
 
   public createFileSync(p: string, flag: FileFlag, mode: number): file.File {
     let parent: Node = this.getNode(path.dirname(p));
-    if (path.basename(p) == 'innerText') {
+    if (path.basename(p) == 'innerText' && this.getTagName(parent) != 'document') {
       let newNode: Node = document.createTextNode(path.basename(p));
       parent.appendChild(newNode);  
     } else {
