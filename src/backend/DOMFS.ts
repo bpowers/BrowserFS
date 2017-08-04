@@ -1,6 +1,7 @@
 import kvfs = require('../generic/key_value_filesystem');
 import {default as Stats, FileType} from '../core/node_fs_stats';
 import {FileFlag, ActionType} from '../core/file_flag';
+import {ApiError, ErrorCode} from '../core/api_error';
 import file = require('../core/file');
 import path = require('path');
 
@@ -86,19 +87,14 @@ export default class DOMFS extends kvfs.SyncKeyValueFileSystem {
   }
 
   private bfs(node: any, cb: Function): void {
-
     let queue: Array<any> = [node];
     let currentNode: any;
-
     while(queue.length > 0) {
-
       currentNode = queue.shift();
       cb(currentNode);
-
       if (!currentNode.children) {
         continue;
       }
-
       for (let i: number = 0; i < currentNode.children.length; i++) {
          queue.push(currentNode.children[i]);
       }
@@ -106,22 +102,17 @@ export default class DOMFS extends kvfs.SyncKeyValueFileSystem {
   }
 
   private getPath(node: Node): string {
-
     let path: string = "";
     let parentNode: Node = node.parentNode;
-
     while(parentNode) {
       path = this.getTagName(parentNode) + "/children/" + path;
       parentNode = parentNode.parentNode;
     }
-
     return "/" + path;
   }
 
   private getTagName(node: Node): string {
-    
     let tagName: string = node.nodeName;
-
     if (tagName[0] == '#') {
       return tagName.toLowerCase().substring(1);
     }
@@ -208,8 +199,9 @@ export default class DOMFS extends kvfs.SyncKeyValueFileSystem {
       } else if (path.basename(oldPath) == 'id') {
         // TODO: Discuss what to do?
       } else {
-        if (oldParent.hasAttribute(path.basename(oldPath))) {
-          newParent.setAttribute(path.basename(oldPath), child.getAttribute(this.getTag(path.basename(oldPath))));  
+        if (oldParent.hasAttribute(this.getTag(path.basename(oldPath))["name"])) {
+          newParent.setAttribute(this.getTag(path.basename(oldPath)["name"]), 
+            child.getAttribute(this.getTag(path.basename(oldPath))["name"]));  
         } else {
           // TODO: What error?
         }
@@ -222,43 +214,59 @@ export default class DOMFS extends kvfs.SyncKeyValueFileSystem {
   }
 
   public createFileSync(p: string, flag: FileFlag, mode: number): file.File {
-    let parent: Node = this.getNode(path.dirname(p));
-    if (path.basename(p) == 'innerText' && this.getTagName(parent) != 'document') {
-      let newNode: Node = document.createTextNode(path.basename(p));
-      parent.appendChild(newNode);  
-    } else {
-      // TODO: Check how to add attributes
+    let parent: any = this.getNode(path.dirname(p));
+    if (parent) {
+      if (path.basename(p) != 'innerText' 
+        && this.getTagName(parent) != 'document' 
+        && !parent.hasAttribute(this.getTag(path.basename(p))["name"])) {
+        parent.setAttribute(this.getTag(path.basename(p))["name"], "");
+      } 
     }
+    
     return super.createFileSync(p, flag, mode);
   }
 
   public unlinkSync(p: string): void {
     let parent: Node = this.getNode(path.dirname(p));
-    let tag: any = this.getTag(path.basename(p));
-    let currCount: number = 0;
-    for (let i: number = 0; i < parent.childNodes.length; i++) {
-      let currNode: Node = parent.childNodes[i];
-      if (this.getTagName(currNode) == tag["name"] && currCount == tag["id"]) {
-        parent.removeChild(currNode);
-        break;
-      }
+    if (parent) {
+      let tag: any = this.getTag(path.basename(p));
+      let currCount: number = 0;
+      for (let i: number = 0; i < parent.childNodes.length; i++) {
+        let currNode: Node = parent.childNodes[i];
+        if (this.getTagName(currNode) == tag["name"] && currCount == tag["id"]) {
+          parent.removeChild(currNode);
+          break;
+        }
+      }  
     }
     super.unlinkSync(p);
   }
 
   public rmdirSync(p: string): void {
     let child: Node = this.getNode(path.dirname(p) + path.sep + path.basename(p));
-    let parent: Node = child.parentNode;
-    parent.removeChild(child);
+    if (child) {
+      let parent: Node = child.parentNode;
+      parent.removeChild(child);  
+    }
     super.rmdirSync(p);
   }
 
   public mkdirSync(p: string, mode: number): void {
     let parent: Node = this.getNode(path.dirname(p));
-    let tag: any = this.getTag(path.basename(p));
-    let newNode: Node = document.createElement(tag["name"]);
-    parent.appendChild(newNode);
+    if (parent) {
+      let tag: any = this.getTag(path.basename(p));
+      let newNode: Node = document.createElement(tag["name"]);
+      parent.appendChild(newNode);  
+    }
     super.mkdirSync(p, mode);
+  }
+
+  public writeFile(fname: string, data: any, encoding: string, flag: FileFlag, mode: number, cb: (err: ApiError) => void): void {
+    // TODO: Check why it is not reachable
+  }
+
+  public writeFileSync(fname: string, data: any, encoding: string, flag: FileFlag, mode: number): void {
+    // TODO: Check why it is not reachable
   }
 
 }
