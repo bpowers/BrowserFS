@@ -261,12 +261,4 @@ export default class DOMFS extends kvfs.SyncKeyValueFileSystem {
     super.mkdirSync(p, mode);
   }
 
-  public writeFile(fname: string, data: any, encoding: string, flag: FileFlag, mode: number, cb: (err: ApiError) => void): void {
-    // TODO: Check why it is not reachable
-  }
-
-  public writeFileSync(fname: string, data: any, encoding: string, flag: FileFlag, mode: number): void {
-    // TODO: Check why it is not reachable
-  }
-
 }

@@ -237,6 +237,7 @@ export class SyncKeyValueFile extends preload_file.PreloadFile<SyncKeyValueFileS
   public closeSync(): void {
     this.syncSync();
   }
+
 }
 
 /**
