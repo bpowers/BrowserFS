@@ -49,6 +49,13 @@ function noErrorTx(e: ApiError, tx: AsyncKeyValueRWTransaction, cb: (e: ApiError
 }
 
 /**
+ * Helper function to convert Buffer to String.
+ */
+ function BufferToString(buf: Buffer): string {
+   return String.fromCharCode.apply(null, new Uint8Array(buf['data']['buff']['buffer']));
+ }
+
+/**
  * Represents a *synchronous* key-value store.
  */
 export interface SyncKeyValueStore {
@@ -230,6 +237,7 @@ export class SyncKeyValueFile extends preload_file.PreloadFile<SyncKeyValueFileS
   public closeSync(): void {
     this.syncSync();
   }
+
 }
 
 /**
@@ -256,7 +264,7 @@ export class SyncKeyValueFileSystem extends file_system.SynchronousFileSystem {
   public static isAvailable(): boolean { return true; }
   public getName(): string { return this.store.name(); }
   public isReadOnly(): boolean { return false; }
-  public supportsSymlinks(): boolean { return false; }
+  public supportsSymlinks(): boolean { return true; }
   public supportsProps(): boolean { return false; }
   public supportsSynch(): boolean { return true; }
 
@@ -316,7 +324,6 @@ export class SyncKeyValueFileSystem extends file_system.SynchronousFileSystem {
       return this.getDirListing(tx, parent, inode)[filename];
     }
   }
-
   /**
    * Finds the Inode of the given path.
    * @param p The path to look up.
@@ -329,7 +336,17 @@ export class SyncKeyValueFileSystem extends file_system.SynchronousFileSystem {
       return undefined;
     }
 
-    return this.getINode(tx, p, inodeId);
+    let inode = this.getINode(tx, p, inodeId);
+
+    if (inode.isSymbolicLink()) {
+      let data =  tx.get(inode.id);
+      if (!data) {
+        return undefined;
+      } else {
+        return this.findINode(tx, path.resolve(BufferToString(data)));
+      }
+    }
+    return inode;
   }
 
   /**
@@ -400,9 +417,11 @@ export class SyncKeyValueFileSystem extends file_system.SynchronousFileSystem {
    * @return The Inode for the new file.
    */
   private commitNewFile(tx: SyncKeyValueRWTransaction, p: string, type: FileType, mode: number, data: NodeBuffer): Inode {
+
     var parentDir = path.dirname(p);
     var fname = path.basename(p);
     var parentNode = this.findINode(tx, parentDir);
+
     if (!parentNode) {
       throw ApiError.ENOENT(parentDir);
     }
@@ -455,6 +474,8 @@ export class SyncKeyValueFileSystem extends file_system.SynchronousFileSystem {
 
   public renameSync(oldPath: string, newPath: string): void {
     var tx = this.store.beginTransaction('readwrite');
+    oldPath = path.resolve(oldPath);
+    newPath = path.resolve(newPath);
     var oldParent = path.dirname(oldPath), oldName = path.basename(oldPath);
     var newParent = path.dirname(newPath), newName = path.basename(newPath);
       // Remove oldPath from parent's directory listing.
@@ -709,6 +730,24 @@ export class SyncKeyValueFileSystem extends file_system.SynchronousFileSystem {
       throw e;
     }
     tx.commit();
+  }
+
+  public symlink(srcpath: string, dstpath: string, type: string, cb: Function): void {
+    try {
+      cb(null, this.symlinkSync(srcpath, dstpath, type));
+    } catch (e) {
+      cb(e);
+    }
+  }
+
+  public symlinkSync(srcpath: string, dstpath: string, type: string): void {
+    let linkpath = path.resolve(dstpath);
+    let parentDir = path.dirname(dstpath);
+    let fname = path.basename(dstpath);
+
+    let tx = this.store.beginTransaction('readwrite');
+    let data = new Buffer(srcpath);
+    this.commitNewFile(tx, linkpath, FileType.SYMLINK, null, data);
   }
 }
 
