@@ -50,7 +50,9 @@ export default class DOMFS extends file_system.SynchronousFileSystem {
   }
 
   public _syncSync(fd: preload_file.PreloadFile<any>) {
-    
+    let node: any = this.getNode(fd.getPath());
+    let buffer: any = fd.getBuffer();
+    node.innerText = String.fromCharCode.apply(null, new Uint8Array(buffer.data.buff.buffer));
   }
 
   public isReadOnly(): boolean { return false; }
@@ -121,7 +123,7 @@ export default class DOMFS extends file_system.SynchronousFileSystem {
           {
             let node: Node = currNode.childNodes[j];
             let nodeTag: any = this.getTag(node);
-            if (node.nodeType == Node.ELEMENT_NODE && nodeTag["name"] == tag["name"] && nodeTag["count"] == tag["count"]) {
+            if (node.nodeType == Node.ELEMENT_NODE && nodeTag["name"] == tag["name"] && nodeTag["id"] == tag["id"]) {
               currNode = node;
               break;
             }
@@ -142,7 +144,7 @@ export default class DOMFS extends file_system.SynchronousFileSystem {
 
     let nodeTag = this.getTag(node);
     let pathTag = this.getTag(path.basename(p));
-    return nodeTag["name"] == pathTag["name"] && nodeTag["count"] == pathTag["count"];
+    return nodeTag["name"] == pathTag["name"] && nodeTag["id"] == pathTag["id"];
   }
 
   /**
