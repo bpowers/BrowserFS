@@ -54,6 +54,9 @@ module.exports = {
     setImmediate: false
   },
   target: 'web',
+  optimization: {
+    minimize: false,
+  },
   module: {
     rules: [
       // Load source maps for any relevant files.
