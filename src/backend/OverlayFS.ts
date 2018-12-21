@@ -362,7 +362,6 @@ export class UnlockedOverlayFS extends BaseFileSystem implements FileSystem {
             // Make the oldStat's mode writable. Preserve the topmost
             // part of the mode, which specifies if it is a file or a
             // directory.
-            stat = Stats.clone(stat);
             stat.mode = makeModeWritable(stat.mode);
           }
           cb(err, stat);
@@ -410,7 +409,6 @@ export class UnlockedOverlayFS extends BaseFileSystem implements FileSystem {
             } else {
               // at this point we know the stats object we got is from
               // the readable FS.
-              stats = Stats.clone(stats!);
               stats.mode = mode;
               this._readable.readFile(p, null, getFlag('r'), (readFileErr: ApiError, data?: any) => {
                 if (readFileErr) {
@@ -640,7 +638,7 @@ export class UnlockedOverlayFS extends BaseFileSystem implements FileSystem {
       }
 
       this._writable.readdir(p, (err: ApiError, wFiles: string[]) => {
-        if (err && err.code !== 'ENOENT') {
+        if (err && err.errno !== ErrorCode.ENOENT) {
           return cb(err);
         } else if (err || !wFiles) {
           wFiles = [];
