@@ -254,3 +254,13 @@ export function checkOptions(fsType: FileSystemConstructor, opts: any, cb: BFSOn
     cb();
   }
 }
+
+function pageCount(size: number): number {
+  size = size | 0;  // ensure size is an integer
+  return ((size + 4095) / 4096) | 0;
+}
+
+export function roundUpToPage(size: number): number {
+  size = size | 0;  // ensure size is an integer
+  return 4096 * pageCount(size);
+}

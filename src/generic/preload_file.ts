@@ -4,7 +4,7 @@ import Stats from '../core/node_fs_stats';
 import {FileFlag} from '../core/file_flag';
 import {ApiError, ErrorCode} from '../core/api_error';
 import fs from '../core/node_fs';
-import {emptyBuffer} from '../core/util';
+import {emptyBuffer, roundUpToPage} from '../core/util';
 
 /**
  * An implementation of the File interface that operates on a file that is
@@ -48,7 +48,7 @@ export default class PreloadFile<T extends FileSystem> extends BaseFile {
     // modified.
     // Note: Only actually matters if file is readable, as writeable modes may
     // truncate/append to file.
-    if (this._stat.size !== this._buffer.length && this._flag.isReadable()) {
+    if (this._stat.size > this._buffer.length && this._flag.isReadable()) {
       throw new Error(`Invalid buffer: Buffer is ${this._buffer.length} long, yet Stats object specifies that file is ${this._stat.size} long.`);
     }
   }
@@ -266,7 +266,7 @@ export default class PreloadFile<T extends FileSystem> extends BaseFile {
       this._stat.size = endFp;
       if (endFp > this._buffer.length) {
         // Extend the buffer!
-        const newBuff = Buffer.alloc(endFp);
+        const newBuff = Buffer.alloc(roundUpToPage(endFp));
         this._buffer.copy(newBuff);
         this._buffer = newBuff;
       }
