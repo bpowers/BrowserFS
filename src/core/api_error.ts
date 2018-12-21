@@ -51,10 +51,10 @@ export class ApiError extends Error implements NodeJS.ErrnoException {
   public static fromJSON(json: any): ApiError {
     const err = new ApiError(0);
     err.errno = json.errno;
-    err.code = json.code;
+    // err.code = json.code;
     err.path = json.path;
-    err.stack = json.stack;
-    err.message = json.message;
+    // err.stack = json.stack;
+    // err.message = json.message;
     return err;
   }
 
@@ -93,11 +93,7 @@ export class ApiError extends Error implements NodeJS.ErrnoException {
   }
 
   public errno: ErrorCode;
-  public code: string;
   public path: string | undefined;
-  // Unsupported.
-  public syscall: string = "";
-  public stack: string | undefined;
 
   /**
    * Represents a BrowserFS error. Passed back to applications after a failed
@@ -112,10 +108,19 @@ export class ApiError extends Error implements NodeJS.ErrnoException {
   constructor(type: ErrorCode, message: string = ErrorStrings[type], path?: string) {
     super(message);
     this.errno = type;
-    this.code = ErrorCode[type];
     this.path = path;
-    this.stack = new Error().stack;
-    this.message = `Error: ${this.code}: ${message}${this.path ? `, '${this.path}'` : ''}`;
+  }
+
+  get code(): string {
+    return ErrorCode[this.errno];
+  }
+
+  get stack(): string | undefined {
+    return undefined;
+  }
+
+  get message(): string {
+    return `Error: ${this.code}: ${ErrorStrings[this.errno]}${this.path ? `, '${this.path}'` : ''}`;
   }
 
   /**

@@ -193,11 +193,7 @@ export default class MountableFileSystem extends BaseFileSystem implements FileS
    * Mutates the input error, and returns it.
    */
   public standardizeError(err: ApiError, path: string, realPath: string): ApiError {
-    const index = err.message.indexOf(path);
-    if (index !== -1) {
-      err.message = err.message.substr(0, index) + realPath + err.message.substr(index + path.length);
-      err.path = realPath;
-    }
+    err.path = realPath;
     return err;
   }
 

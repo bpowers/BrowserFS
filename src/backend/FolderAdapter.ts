@@ -99,11 +99,8 @@ export default class FolderAdapter extends BaseFileSystem implements FileSystem 
 function translateError(folder: string, e: any): any {
   if (e !== null && typeof e === 'object') {
     const err = <ApiError> e;
-    let p = err.path;
-    if (p) {
-      p = '/' + path.relative(folder, p);
-      err.message = err.message.replace(err.path!, p);
-      err.path = p;
+    if (err.path) {
+      err.path = '/' + path.relative(folder, err.path);
     }
   }
   return e;
