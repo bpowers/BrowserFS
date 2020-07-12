@@ -18,7 +18,6 @@ const installedBrowsers = isTravis ? ['Firefox'] : detectBrowsers.getInstalledBr
     }
   });
 
-let dropbox = false;
 let continuous = false;
 let coverage = false;
 let karmaFiles = [
@@ -30,15 +29,6 @@ let karmaFiles = [
   { pattern: 'src/**/*', included: false, watched: false },
   { pattern: 'test/**/*', included: false, watched: false }
 ];
-
-// The presence of the Dropbox library dynamically toggles the tests.
-if (dropbox) {
-  karmaFiles.unshift('node_modules/dropbox/dist/Dropbox-sdk.min.js');
-  // Generate token.
-  execSync(`node ${path.resolve(__dirname, './build/scripts/get_db_credentials.js')} ${path.resolve(__dirname, './test/fixtures/dropbox/token.json')}`, {
-    stdio: 'inherit'
-  });
-}
 
 module.exports = function(configSetter) {
   let config = {
@@ -56,7 +46,7 @@ module.exports = function(configSetter) {
     captureTimeout: 60000,
     singleRun: !continuous,
     urlRoot: '/',
-    // Dropbox tests are slow.
+    // some tests are slow.
     browserNoActivityTimeout: 60000,
     browserDisconnectTimeout: 10000,
     browserDisconnectTolerance: 3,

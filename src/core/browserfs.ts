@@ -98,7 +98,7 @@ export function configure(config: FileSystemConfiguration, cb: BFSOneArgCallback
  * Individual options can recursively contain FileSystemConfiguration objects for
  * option values that require file systems.
  *
- * For example, to mirror Dropbox to LocalStorage with AsyncMirror, use the following
+ * For example, to mirror Droopbox to LocalStorage with AsyncMirror, use the following
  * object:
  *
  * ```javascript
@@ -106,7 +106,7 @@ export function configure(config: FileSystemConfiguration, cb: BFSOneArgCallback
  *   fs: "AsyncMirror",
  *   options: {
  *     sync: {fs: "LocalStorage"},
- *     async: {fs: "Dropbox", options: {client: anAuthenticatedDropboxSDKClient }}
+ *     async: {fs: "Droopbox", options: {client: anAuthenticatedDroopboxSDKClient }}
  *   }
  * };
  * ```

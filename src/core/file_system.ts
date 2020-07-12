@@ -261,7 +261,7 @@ export interface FileSystem {
   appendFileSync(fname: string, data: string | Buffer, encoding: string | null, flag: FileFlag, mode: number): void;
   // **OPTIONAL INTERFACE METHODS**
   // Property operations
-  // This isn't always possible on some filesystem types (e.g. Dropbox).
+  // This isn't always possible on some filesystem types.
   /**
    * **Optional**: Asynchronous `chmod` or `lchmod`.
    * @param isLchmod `True` if `lchmod`, false if `chmod`. Has no

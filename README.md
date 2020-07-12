@@ -13,8 +13,6 @@ BrowserFS is highly extensible, and ships with many filesystem backends:
 * `LocalStorage`: Stores files in the browser's `localStorage`.
 * `HTML5FS`: Stores files into the HTML5 `FileSystem` API.
 * `IndexedDB`: Stores files into the browser's `IndexedDB` object database.
-* `Dropbox`: Stores files into the user's Dropbox account.
-  * Note: You provide this filesystem with an authenticated [DropboxJS V2 JS SDK client](https://github.com/dropbox/dropbox-sdk-js).
 * `InMemory`: Stores files in-memory. Thus, it is a temporary file store that clears when the user navigates away.
 * `ZipFS`: Read-only zip file-backed FS. Lazily decompresses files as you access them.
   * Supports DEFLATE out-of-the-box.
@@ -215,16 +213,15 @@ function setupBFS() {
 
 Note: Do **NOT** use `BrowserFS.install(window)` on a page with an Emscripten application! Emscripten will be tricked into thinking that it is running in Node JS.
 
-If you wish to use an asynchronous BrowserFS backend with Emscripten (e.g. Dropbox), you'll need to wrap it into an `AsyncMirror` file system first:
+If you wish to use an asynchronous BrowserFS backend with Emscripten, you'll need to wrap it into an `AsyncMirror` file system first:
 
 ```javascript
 /**
  * Run this prior to starting your Emscripten module.
- * @param dropboxClient An authenticated DropboxJS client.
  */
-function asyncSetup(dropboxClient, cb) {
-  // This wraps Dropbox in the AsyncMirror file system.
-  // BrowserFS will download all of Dropbox into an
+function asyncSetup(cb) {
+  // This wraps the async FS in the AsyncMirror file system.
+  // BrowserFS will download all of the async files into an
   // InMemory file system, and mirror operations to
   // the two to keep them in sync.
   BrowserFS.configure({
@@ -234,10 +231,8 @@ function asyncSetup(dropboxClient, cb) {
         fs: "InMemory"
       },
       async: {
-        fs: "Dropbox",
-        options: {
-          client: dropboxClient
-        }
+        fs: "SomeAsyncFilesystem",
+        options: {}
       }
     }
   }, cb);

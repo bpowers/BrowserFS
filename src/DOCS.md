@@ -16,8 +16,7 @@ Before you can use BrowserFS, you need to answer the following questions:
 ### What Backend(s) to Use?
 
 Before you can use BrowserFS, you must initialize it with a single root file system backend. Think of each backend
-as a "storage device". It can be read-only (a zip file or an ISO), read-write (browser-local IndexedDB storage),
-and it can even be cloud storage (Dropbox).
+as a "storage device". It can be read-only (a zip file or an ISO) or read-write (browser-local IndexedDB storage).
 
 If you need to use multiple "storage devices", you can use the `MountableFileSystem` backend to "mount" backends at
 different locations in the directory hierarchy.
@@ -143,13 +142,6 @@ Note that any asynchronous file system can be accessed synchronously using the [
     <td><a href="classes/_backend_asyncmirror_.asyncmirror.html">AsyncMirror</a></td>
     <td>✓</td>
     <td>✓</td>
-    <td>✗</td>
-    <td>✗</td>
-  </tr>
-  <tr>
-    <td><a href="classes/_backend_dropbox_.dropboxfilesystem.html">Dropbox</a></td>
-    <td>✓</td>
-    <td>✗</td>
     <td>✗</td>
     <td>✗</td>
   </tr>

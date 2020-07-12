@@ -834,7 +834,7 @@ buffer@^4.3.0:
     ieee754 "^1.1.4"
     isarray "^1.0.0"
 
-buffer@^5.0.8, buffer@^5.1.0:
+buffer@^5.1.0:
   version "5.2.0"
   resolved "https://registry.yarnpkg.com/buffer/-/buffer-5.2.0.tgz#53cf98241100099e9eeae20ee6d51d21b16e541e"
   dependencies:
@@ -1469,13 +1469,6 @@ dom-serialize@^2.2.0:
 domain-browser@^1.1.1:
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/domain-browser/-/domain-browser-1.2.0.tgz#3d31f50191a6749dd1375a7f522e823d42e54eda"
-
-dropbox@~4.0.9:
-  version "4.0.9"
-  resolved "https://registry.yarnpkg.com/dropbox/-/dropbox-4.0.9.tgz#0847d1ee366756f2db0e67a7859d75601fd909ed"
-  dependencies:
-    buffer "^5.0.8"
-    moment "^2.19.3"
 
 duplexer@~0.1.1:
   version "0.1.1"
@@ -3227,10 +3220,6 @@ mocha@~5.2.0:
     minimatch "3.0.4"
     mkdirp "0.5.1"
     supports-color "5.4.0"
-
-moment@^2.19.3:
-  version "2.22.2"
-  resolved "https://registry.yarnpkg.com/moment/-/moment-2.22.2.tgz#3c257f9839fc0e93ff53149632239eb90783ff66"
 
 move-concurrently@^1.0.1:
   version "1.0.1"

@@ -42,7 +42,6 @@
     "body-parser": "~1.18.3",
     "buffer": "~5.2.1",
     "detect-browsers": "~2.0.0",
-    "dropbox": "~4.0.9",
     "express": "~4.16.3",
     "isomorphic-fetch": "~2.2.1",
     "karma": "~3.0.0",
