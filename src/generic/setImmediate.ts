@@ -1,7 +1,7 @@
 /**
  * @hidden
  */
-let bfsSetImmediate: (cb: Function) => any = (cb: Function) => {
+const bfsSetImmediate: (cb: Function) => any = (cb: Function) => {
   cb();
 };
 
