@@ -7,10 +7,17 @@ import {arrayBuffer2Buffer, buffer2ArrayBuffer} from '../core/util';
  * Get the indexedDB constructor for the current browser.
  * @hidden
  */
-const indexedDB: IDBFactory = global.indexedDB ||
-                          (<any> global).mozIndexedDB ||
-                          (<any> global).webkitIndexedDB ||
-                          global.msIndexedDB;
+const indexedDB: IDBFactory =
+    (() =>  {
+        try {
+            return global.indexedDB ||
+                (<any> global).mozIndexedDB ||
+                (<any> global).webkitIndexedDB ||
+                global.msIndexedDB;
+        } catch {
+            return null;
+        }
+    })();
 
 /**
  * Converts a DOMException or a DOMError from an IndexedDB event into a
@@ -218,7 +225,7 @@ export default class IndexedDBFileSystem extends AsyncKeyValueFileSystem {
   /**
    * Constructs an IndexedDB file system with the given options.
    */
-  public static Create(opts: IndexedDBFileSystemOptions, cb: BFSCallback<IndexedDBFileSystem>): void {
+  public static Create(opts: IndexedDBFileSystemOptions = {}, cb: BFSCallback<IndexedDBFileSystem>): void {
     IndexedDBStore.Create(opts.storeName ? opts.storeName : 'browserfs', (e, store?) => {
       if (store) {
         const idbfs = new IndexedDBFileSystem(typeof(opts.cacheSize) === 'number' ? opts.cacheSize : 100);
